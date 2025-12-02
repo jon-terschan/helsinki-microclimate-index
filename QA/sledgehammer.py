@@ -213,9 +213,9 @@ def edit_file(serial, source_folder, output_folder, figure_folder, edits_fn):
 # NESTED MASTER FUNCTION SETTINGS
 def my_edits(df):
     #df = remove_values(df, "t1", ["2024-07-01 00:00"])
-    df = remove_values_span(df, "t1", "2024-05-06", "2024-05-11", flag_oos=True)
-    df = remove_values_span(df, "t1", "2024-07-31", "2024-09-23", flag_oos=True)
-    #df = remove_rows(df, start="2024-06-10", end="2024-06-12")
+    df = remove_values_span(df, "t1", "2024-06-01", "2024-09-26", flag_oos=True)
+    #df = remove_values_span(df, "t1", "2024-07-31", "2024-09-23", flag_oos=True)
+    #df = remove_rows(df, start="2024-01-01", end="2024-04-26")
     #df = interpolate_missing(df, 20)
     return df
 
@@ -231,7 +231,7 @@ def my_edits(df):
 
 ### EXECUTE
 edit_file(
-    serial="94226128",
+    serial="94290008",
     source_folder=SOURCE_FOLDER,
     output_folder=OUT_FOLDER,
     figure_folder=FIG_FOLDER,
