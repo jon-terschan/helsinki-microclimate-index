@@ -19,16 +19,20 @@ SMC is soil moisture count if available.
 Scripts to conduct various pre-processing and quality assessment operations. 
 
 ## date_filter
-Filters out data from the beginning of measurements. This is necessary because TOMST loggers always record and cannot be turned off. Note that the scripts assumes a period of temperature stability in air conditioning (21 degrees room temperatures). Thus, it won't work correctly if a prior field campaign is still part of the time series. Date filter is where I figured out the logic, the loop script just does the same for many files.
+Filters out data prior to the start of measurements. TOMST loggers always record and cannot be turned off, so they will produce heaps of unrelated signals. The date filter assumes a period of relative temperature stability as the loggers are stored in air conditioning (~21 deg room temperature). This means the date filter won't work correctly if the time series contains real signal from an earlier field campaign. 
+
+Date filter is the script in which I figured out the logic. Loop script does the same in batch.
 
 ## big_QA 
-Performs various preprocessing operations in batch and then spits out a hopefully helpful report that allows you to identify which files need special attention. 
+Performs various preprocessing operations in batch and spits out a report that allows you to identify which files need special attention. QA is quite conservative, because I have not tested function behavior extensively on the available data. 
 
 ## Sledgehammer 
-For manual quality improvements that need to be done after the big_QA, basically the final cleanup. Has some functions to remove and interpolate data and other data curation functions. 
+A script for manual quality improvements that still remain after the big_QA, basically the final cleanup. Has some functions to remove and interpolate data and other data curation functions, including a function to remove faulty soil temperature readings and flag out-of-soil (OOS) periods in the data.
+
+Note that there is no functions to fill large gaps in time series. 
 
 ## Duplicate detector
-Some vibecoded stuff I used to check for duplicates, but later became deprecated. 
+Deprecated script to detect timestamp duplicates (faulty measurements). Used for diagnostics, but vibecoded and not refactored.  
 
 ## Outlier detection
-My first attempt at writing an outlier detection. Deprecated, because the fine tuning took too much time and in the end I had to do this manually anyways. 
+Deprecated first attempt at writing an outlier detection. Works, but the fine tuning takes too much time and in the end I had to do so much manual data curation anyways, it was easier to just manually remove extreme outliers.  

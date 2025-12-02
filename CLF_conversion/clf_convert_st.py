@@ -10,13 +10,14 @@ import warnings
 #####################
 # SOURCE & SETTINGS #
 #####################
-source_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\clf_conversion\source" # input path fll with .csv
-output_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\clf_conversion\output" # output path for CLF.csvs
-figure_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\clf_conversion\figures" # output path for figures
+source_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\clf_conversion\source" # input path to raw logger .csv
+output_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\clf_conversion\output" # output path for CLF .csv
+figure_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\clf_conversion\figures" # output path for interactive figures
 # cutoff_date = "2024-03-01" # unnecessary because ST logs only when setup
 logtype = 3 # 1 = TMS, 2 = TL, 3 = ST, 4 = NA
 logger_type = "ST"
 local_tz = pytz.timezone('Europe/Helsinki') # hand initial timezone for UTC conversion, ST record in local time of the computer they have been set up to
+
 #######################
 # CLF CONVERSION LOOP #
 #######################
