@@ -4,6 +4,8 @@ from glob import glob
 import dask
 import numpy as np
 
+# purpose: concatenate ERA5 files, and add windspeed:
+
 # define inputs
 com_folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\ERA"
 folder = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\ERA\HELNORTH"

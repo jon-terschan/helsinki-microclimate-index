@@ -1,3 +1,4 @@
+# Purpose: download data from copernicus data store using cdsapi
 # REFERENCE: https://confluence.ecmwf.int/display/CKB/How+to+install+and+use+CDS+API+on+Windows
 # import api, only works if the corresponding key file has been set up correctly
 import cdsapi
@@ -86,7 +87,7 @@ era_request = {
 era_target = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\ERA\HELNORTH\ERA_SUMMER_25_09.netcdf" # target folder and name
 client.retrieve(dataset_era, era_request, era_target) # execute API request
 
-# dummy testing code provided in documentation
+# dummy testing code from documentation
 #import cdsapi
 #client = cdsapi.Client()
 #dataset = 'reanalysis-era5-pressure-levels'

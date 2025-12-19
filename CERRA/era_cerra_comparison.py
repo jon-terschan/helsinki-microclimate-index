@@ -4,23 +4,19 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import geopandas as gpd
 
-"""
-Side-by-side ERA vs CERRA viewer, vibecoded asf and held together
-by a worm on a string.
-"""
+# Purpose: Side-by-side ERA vs CERRA visual viewer, vibecoded asf.
 
 # load city boundary (prepared in QGIS)
 gpkg_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\CERRA\helsinki_outline.gpkg"
 city = gpd.read_file(gpkg_path)
 line_layer = city
 
-# ensure CRS = WGS84
+# enforce CRS = WGS84
 if line_layer.crs is not None and line_layer.crs.to_string() != "EPSG:4326":
     line_layer = line_layer.to_crs("EPSG:4326")
-
 minx, miny, maxx, maxy = line_layer.total_bounds
 
-
+# this is vibecoded
 def main():
     # -------------------------
     era_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\ERA_SUMMER_24_25_HEL.netcdf"
@@ -111,6 +107,6 @@ def main():
 
     plt.show()
 
-
+# execute main function
 if __name__ == "__main__":
     main()
