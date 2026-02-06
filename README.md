@@ -1,13 +1,31 @@
-# HELMIMOD - A predictive model of summer near-ground temperatures in urban parks and forests for the City of Helsinki
+# HELMIMOD - A predictive machine-learning model of Summer near-ground temperatures in Helsinki parks and urban forests.
 
-## HPC documentation
-High performance computing (HPC) was used to (pre-)process airborne laser scanning tiles and train/test the model. All HPC tasks were performed on CSC's Puhti supercomputer. Unfortunately, Puhti reached the end of his lifecycle in early to mid 2026 which may affect reproducibility in some parts. However, the general SLURM/Lustre logic stays the same regardless. Generally, all HPC analysis involving ALS tiles are embarassingly lazy (or almost) and were ran using single-core job arrays.
+A short summary of the model, performance metrics and limitations.
 
-### Filter_tiles.R
-The current approach to calculate DTMs and such from ALS causes issues and overhead because many tiles with little to no ground points exist (water, some edges). This script reduces the tile index to tiles that have ground points. The resulting reduced index should hopefully decrease runtime by reducing the number of tasks further and preventing workers being busy opening and closing tiles without ground points.
+# HPC
+We used high-performance computing (HPC) to (pre-)process airborne laser scanning tiles and train/test the model. HPC tasks were performed on CSC's Puhti supercomputer. Unfortunately, Puhti reached the end of his lifecycle in early to mid 2026 which may affect reproducibility in some parts. However, the general SLURM/Lustre logic stays the same regardless. Generally, all HPC analysis involving ALS tiles are embarassingly parallel (or almost) and were ran using single-core job arrays.
 
-## STATIC VARIABLES
+# STATIC VARIABLES
+## AIRBORNE LASER SCANNING DERIVED VARIABLES
+### Downloading ALS files
+### Preparing ALS files
+We remove files without ground points (relies on Helsinki ground classification) 1281 -> 1200 tiles.
+The reason for that is that they cannot be used for DTM generation and will cause issues and overhead on the supercomputer. Thus filter_tiles.R script creates a new index that only retains tiles with valid ground points and creates a output table for debugging with information.
+
+Homogenize files and assign correct CRS to header using las2las. 
+las2las64 \ -i "$FILE" \ -o "$OUT_FILE" \ -set_point_type 6 \ -set_point_size 41 \ -epsg 3879 \ -olaz 
+This is done to prevent CRS mismatches due to wrongly assigned headers (we know native CRS is EPSG:3879) and warning messages due to mismatches in point size (.laz version context)
+
+Splitting the file list into 4 concurrent blocks because the array size on Puhti's small partition is capped to a maximum of 1000 total tasks. In embarassingly parallel lazy tasks using file lists as indexer such as the one used here, this prevents referential indexing via the task number (e.g. an array with tasks 900-1200 would not be allowed, despite being less a 1000 tasks.)
+### Stage 1: DTM, DSM, CHM, and normalized point clouds
+### Stage 2: Canopy metrics
+### Stage 3: SVF
+SVF is a separate stage simply it because it relies on GRASS GIS r.skyview, instead of R. Here, a single merged CHM is expected as input.
+
+## OTHER STATIC VARIABLES
 Contains script to generate additional static predictors relevant to the model, mainly related to topography, water presence, and build-up matter. 
+
+# DYNAMIC VARIABLES
 ## CLF CONVERSION
 Scripts used to convert different native logger formats into a common logger format (CLF). Scripts available for SurveyTag and TOMST (TMS4, Thermologgers). CLF looks as follows: 
 
