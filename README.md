@@ -1,4 +1,4 @@
-# HELMIMOD - A predictive machine-learning model of Summer near-ground temperatures in Helsinki parks and urban forests.
+# HELMI - Helsinki Microclimate Index: A predictive machine-learning model of Summer near-ground temperatures in Helsinki parks and urban forests.
 
 A short summary of the model, performance metrics and limitations.
 
@@ -12,12 +12,15 @@ See [CREDITS.md](CREDITS.md) for details.
 ## A note on HPC
 High-performance computing (HPC) was used to (pre-)process airborne laser scanning (ALS) tiles and model training & testing. ALS data sets are often structured as hundreds of tiles, making them suitable for (almost) embarassingly parallel HPC processing. We used CSC's Puhti supercomputer and acknowledge the computational resources contributed by CSC here. Unfortunately, Puhti reached the end of his lifecycle in early to mid 2026 which may affect reproducibility of the related scripts. Since the general SLURM/Lustre logic stays the same, it should be relatively straightforward to adapt the analyses to a different HPC system.
 
+# Additional documentation
+
+More in-depth (technical) documentation on the content of this repository can be found below.
 ___
 
 # STATIC VARIABLES
 ## AIRBORNE LASER SCANNING DERIVED VARIABLES 
 ### Download
-Airborne lidar coverage of Helsinki is provided by the City of Helsinki. Unfortunately, the city's GUI for downloading open data ((https://kartta.hel.fi/)[kartta.hel.fi]) does not allow to download the data in bulk, creating the necessity to access the storage location directly. We retrieved the storage location using the developer view when creating a file request and used it to create a bulk downloader `hel_lidar_tile_downloader`. It uses a tile index `hel_lidar_tiles.txt` to request the data in a (hopefully) non-offensive way in bulk. The full download takes about 4-6 hours. Our file index was created by brute creating a faux index exploiting the coordinate-based naming convention of the tile (brute force) and filling the gaps manually.
+Airborne lidar coverage of Helsinki is provided by the City of Helsinki. Unfortunately, the city's GUI for downloading open data ([kartta.hel.fi](https://kartta.hel.fi/)) does not allow to download the data in bulk, creating the necessity to access the storage location directly. We retrieved the storage location using the developer view when creating a file request and used it to create a bulk downloader `hel_lidar_tile_downloader`. It uses a tile index `hel_lidar_tiles.txt` to request the data in a (hopefully) non-offensive way in bulk. The full download takes about 4-6 hours. Our file index was created by brute creating a faux index exploiting the coordinate-based naming convention of the tile (brute force) and filling the gaps manually.
 
 ### Preparation
 Extensive preparation was necessary to minimize 
@@ -30,21 +33,35 @@ Homogenization prevents CRS mismatches and warning messages due to .las/.laz ver
 Finally, we split the file index into 4 concurrent sub-indices (blocks), because the array size on Puhti's small partition is capped to a maximum of 1000 tasks. The reason for that is purely technical: In embarassingly parallel tasks that use file lists to index such as the one we used here, referential indexing via task number is no longer possible if the task maximum is exceeded. For instance, an array set to fulfill the tasks 900-1200 is not allowed on Puhti, despite the number of tasks being far below the threshold. To circumvent this, we split the index into four sub-indices and always create the same array (1-300%40).
 
 ### Stage 1: DTM, DSM, CHM, and normalized point clouds
-The first processing step was to derive digital topographic and surface models (DTM and DSM) and canopy height models (CHM), as well as height-normalized point clouds. DTMs are necessary for height normalization, and the CHM is required to discretize canopy metrics. These preprocessing steps are well established and documented elsewhere. Here, we used the lasR and lidR R packages to implement them. LasR is a fast laser scanning pipeline package that functions as a C++ API within R. From lidR, we mainly used the `las.catalog` engine to handle file reading and writing ((https://cran.r-project.org/web/packages/lidR/vignettes/lidR-LAScatalog-engine.html)[see Documentation])).
+The first processing step was to derive digital topographic and surface models (DTM and DSM) and canopy height models (CHM), as well as height-normalized point clouds. DTMs are necessary for height normalization, and the CHM is required to discretize canopy metrics. These preprocessing steps are well established and documented elsewhere. Here, we used the lasR and lidR R packages to implement them. LasR is a fast laser scanning pipeline package that functions as a C++ API within R. From lidR, we mainly used the `las.catalog` engine to handle file reading and writing ([see Documentation](https://cran.r-project.org/web/packages/lidR/vignettes/lidR-LAScatalog-engine.html)).
 
-The general logic here is that for each tile, neighboring tiles intersecting with a buffer distance are identified. The pipeline then runs over the full neighborhood and in the end copies the core tile results into the output folder. This is unfortunately necessary to prevent edge affects due to missing triangulation input that would otherwise appear if no information on the neighborhood were available. Fortunately, lascatalog handles this quite well. 
+For each tile, neighbor tiles intersecting with a certain buffer distance are identified. The pipeline then runs over the full neighborhood (tiles + neighbors) and, in the end, copies the core tile results from a temporary location to a permanent output folder. Loading the full neighborhood is unfortunately necessary to prevent edge affects due to missing triangulation input.
 
 ### Stage 2: Canopy metrics
-The second processing step was to estimate canopy metrics from the canopy height models. The methodology here is described in the corresponding calculation. These are all relatively simple calculations and easily rasterized - neighborhoods are not needed here.
+The next step was to estimate canopy metrics from the canopy height models. The methodology here is described in detail in the corresponding publication, but generally, these are all relatively simple calculations. Neighborhoods are not needed here, so everything is simple and embarassingly parallel in the truest sense. 
 
 ### Stage 3: SVF
-Calculating the skyview factor is a separate stage because it relies on GRASS GIS r.skyview, instead of R. Here, a single merged CHM is expected as input. The reason for that is, again, to avoid edge artifacts since the SVF needs pixel neighborhood information. 
+Calculating the skyview factor is a separate stage because it relies on GRASS GIS [r.skyview](https://grass.osgeo.org/grass-stable/manuals/addons/r.skyview.html), instead of R. Here, a single merged CHM for the whole AOI is expected as input. The reason for that is, again, to avoid edge artifacts since the SVF needs pixel neighborhood information.
 
 ## OTHER STATIC VARIABLES
-Contains script to generate additional static predictors relevant to the model, mainly related to topography, water presence, and build-up matter. 
+We created many scripts generating and preparing additional static predictors used by the model related to topography, water presence and built-up matter. Some examples include:
 
+* Elevation, slope, slopeaspect (Eastness/Southness), and ruggedness
+* Water presence, distance to oceans/inland water bodies
+* Building presence, height, and distance from buildings
+* Presence of other impervious surfaces (concrete roads and sealed surfaces)
+* Rocky outcrop presence 
+* 
+
+The topographic rasters are derived from the 2021 [City of Helsinki digital elevation model](https://hri.fi/data/en_GB/dataset/helsingin-korkeusmalli). Water, building, and other rasters are derived from the 2024 [Helsinki region land cover data set](https://www.hsy.fi/en/environmental-information/open-data/avoin-data---sivut/helsinki-region-land-cover-dataset/). These are generally simple data preparation steps, that do not warrant long documentation. Most involve rasterization to the same 1 m grid template and then upscaling to the 10 m prediction grid.  
+
+Building height is interesting insofar it requires the merged CHM to be masked by a building mask.
 # DYNAMIC VARIABLES
-## CLF CONVERSION
+## REMODELING DATA
+We downloaded and tested both ERA5-Land and CERRA-Land data as reference data sets of ambient climate. CERRA has a better spatial resolution but worse time resolution than ERA-5 Land, so it likely captures the ocean-land climatic gradient better. 
+
+## MICROCLIMATE MEASUREMENTS
+### CLF CONVERSION
 Scripts used to convert different native logger formats into a common logger format (CLF). Scripts available for SurveyTag and TOMST (TMS4, Thermologgers). CLF looks as follows: 
 
 | datetime                  	| t1   	| t2   	| t3   	| SMC 	|
@@ -60,7 +77,7 @@ t2 is surface temperature sensor reading (if present) in degrees Celsius
 t3 is air temperature sensor reading in degrees Celsius.
 SMC is soil moisture count if available. 
 
-## QA
+### QA
 
 Scripts to conduct various pre-processing and quality assessment operations. 
 
