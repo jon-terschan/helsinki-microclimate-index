@@ -9,6 +9,9 @@ Limitations overview.
 ## Acknowledgements
 This publication builds on many excellent open-source software, packages and libraries. Many thanks to the authors and maintainers who make this work possible. ❤️
 See [CREDITS.md](CREDITS.md) for details.
+
+For acknowledgements related to the research in which Helmi was published, please check out the corresponding publication.
+
 ## A note on HPC
 High-performance computing (HPC) was used to (pre-)process airborne laser scanning (ALS) tiles and model training & testing. ALS data sets are often structured as hundreds of tiles, making them suitable for (almost) embarassingly parallel HPC processing. We used CSC's Puhti supercomputer and acknowledge the computational resources contributed by CSC here. Unfortunately, Puhti reached the end of his lifecycle in early to mid 2026 which may affect reproducibility of the related scripts. Since the general SLURM/Lustre logic stays the same, it should be relatively straightforward to adapt the analyses to a different HPC system.
 
@@ -26,11 +29,12 @@ Airborne lidar coverage of Helsinki is provided by the City of Helsinki. Unfortu
 Extensive preparation was necessary to minimize 
 We removed all tiles without ground points, because they cannot be used to generate DTM (no points to triangulate from) and will just cause issues and overhead on the supercomputer. We relied on the City's preexisting classification of points for that. `filter_tiles.R` script creates a new index that only retains tiles with valid ground points and creates a output table for debugging with information. This reduced the amount of valid tiles from 1281 to (coincidentally) 1200.
 
-We then used the new index to homogenize the files and assign the correct CRS (EPSG:3879) to the .laz header using LASTOOLS las2las.
-las2las64 \ -i "$FILE" \ -o "$OUT_FILE" \ -set_point_type 6 \ -set_point_size 41 \ -epsg 3879 \ -olaz 
-Homogenization prevents CRS mismatches and warning messages due to .las/.laz version conflicts.
+We then used the new index to homogenize the files and assign the correct CRS (EPSG:3879) to the .laz header using LAStools `las2las` [(see Documentation)](https://downloads.rapidlasso.de/html/las2las_README.html).
+`las2las64 \ -i "$FILE" \ -o "$OUT_FILE" \ -set_point_type 6 \ -set_point_size 41 \ -epsg 3879 \ -olaz`
 
-Finally, we split the file index into 4 concurrent sub-indices (blocks), because the array size on Puhti's small partition is capped to a maximum of 1000 tasks. The reason for that is purely technical: In embarassingly parallel tasks that use file lists to index such as the one we used here, referential indexing via task number is no longer possible if the task maximum is exceeded. For instance, an array set to fulfill the tasks 900-1200 is not allowed on Puhti, despite the number of tasks being far below the threshold. To circumvent this, we split the index into four sub-indices and always create the same array (1-300%40).
+Homogenization prevents coordinate reference system (CRS) mismatches and warning messages due to .las/.laz version conflicts.
+
+Finally, we split the file index into 4 concurrent sub-indices (blocks), because the array size on Puhti's small partition is capped to a maximum of 1000 tasks. The reason for that is purely technical: In embarassingly parallel tasks that use file lists to index such as the one we used here, referential indexing via task number is no longer possible if the task maximum is exceeded. For instance, an array set to fulfill the tasks 900-1200 is not allowed on Puhti, despite the number of tasks being far below the threshold. To circumvent this, we split the index into four sub-indices and always create the same array (`1-300%40`).
 
 ### Stage 1: DTM, DSM, CHM, and normalized point clouds
 The first processing step was to derive digital topographic and surface models (DTM and DSM) and canopy height models (CHM), as well as height-normalized point clouds. DTMs are necessary for height normalization, and the CHM is required to discretize canopy metrics. These preprocessing steps are well established and documented elsewhere. Here, we used the lasR and lidR R packages to implement them. LasR is a fast laser scanning pipeline package that functions as a C++ API within R. From lidR, we mainly used the `las.catalog` engine to handle file reading and writing ([see Documentation](https://cran.r-project.org/web/packages/lidR/vignettes/lidR-LAScatalog-engine.html)).
