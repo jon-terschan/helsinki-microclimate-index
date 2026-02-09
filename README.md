@@ -48,7 +48,7 @@ We later learned that the maximum number of jobs that can be queued in Puhti are
 ### Stage 1: DTM, DSM, CHM, and normalized point clouds
 The first processing step was to derive digital topographic and surface models (DTM and DSM) and canopy height models (CHM), as well as height-normalized point clouds. DTMs are a prerequisite for height normalization, and CHMs are required to discretize canopy metrics. These preprocessing steps are well established and documented elsewhere. Here, we used the lasR and lidR R packages to implement them. LasR is a fast laser scanning pipeline package that functions as a C++ API within R. From lidR, we mainly used the `las.catalog` engine to handle file reading and writing ([see Documentation](https://cran.r-project.org/web/packages/lidR/vignettes/lidR-LAScatalog-engine.html)).
 
-![A conceptual flowchart of stage 1](./images/stage1_concept.png)
+![A conceptual flowchart of stage 1](https://github.com/jon-terschan/scripts/blob/main/figures/stage1_concept.png)
 
 For each tile, neighbor tiles intersecting with a certain buffer distance are identified. For that reason, we need the spatial tile index `tile_index.gpkg` that was generated earlier. The pipeline then runs over the tile's full neighborhood (core tile + neighbor tile) and, in the end, copies the core tile results from a temporary location to a permanent output folder. Loading the full neighborhood is unfortunately necessary to prevent edge affects due to missing triangulation input. 
 
