@@ -46,34 +46,41 @@ Finally, we split the tile index into four concurrent sub-indices (blocks), beca
 We later learned that the maximum number of jobs that can be queued in Puhti are 400, so retroactively it would make more sense to split the tile index into three sub-indices (each containing 400 files), instead of four. 
 
 ### Stage 1: DTM, DSM, CHM, and normalized point clouds
-The first processing step was to derive digital topographic and surface models (DTM and DSM) and canopy height models (CHM), as well as height-normalized point clouds. DTMs are a prerequisite for height normalization, and CHMs are required to discretize canopy metrics. These preprocessing steps are well established and documented elsewhere. Here, we used the lasR and lidR R packages to implement them. LasR is a fast laser scanning pipeline package that functions as a C++ API within R. From lidR, we mainly used the `las.catalog` engine to handle file reading and writing ([see Documentation](https://cran.r-project.org/web/packages/lidR/vignettes/lidR-LAScatalog-engine.html)).
+The first processing step was to derive digital topographic and surface models (DTM and DSM) and canopy height models (CHM), as well as height-normalized point clouds. DTMs are a prerequisite for height normalization, and CHMs are required to discretize canopy metrics. These preprocessing steps are well established and documented elsewhere. Here, we used the lasR and lidR R packages to implement them. LasR is a fast laser scanning pipelining tool that operates as a C++ API within R. It has some limited support for task-internal parallelism (OpenMP), we do not make use of here. 
+
+From lidR, we mainly used the `las.catalog` engine to handle file reading and writing ([see Documentation](https://cran.r-project.org/web/packages/lidR/vignettes/lidR-LAScatalog-engine.html)).
 
 ![A conceptual flowchart of stage 1](https://github.com/jon-terschan/scripts/blob/main/figures/stage1_concept.png)
 
-For each tile, neighbor tiles intersecting with a certain buffer distance are identified. For that reason, we need the spatial tile index `tile_index.gpkg` that was generated earlier. The pipeline then runs over the tile's full neighborhood (core tile + neighbor tile) and, in the end, copies the core tile results from a temporary location to a permanent output folder. After the task, the temporary locations can be deleted. Loading the full neighborhood is unfortunately necessary to prevent edge affects due to missing triangulation input. 
+For each tile, neighbor tiles intersecting with a certain buffer distance are identified. For that reason, we need the spatial tile index `tile_index.gpkg` that was generated earlier. The pipeline then runs over the tile's full neighborhood (core tile + neighbor tile) and, in the end, copies the core tile results from a temporary location to a permanent output folder. After the task, the temporary locations can be deleted, as the output within it will be redundant and of inferior quality to the core tiles (which are processed with the full neighborhood). 
+
+Our approach creates an excessive amount of redundant calculations and outputs: For a single DTM, up to nine files will be processed sequentially. But, considering it will always be necessary to process a neighborhood to avoid edge artifacts, it is the most memory efficient, HPC-friendly solution we found within the constraints of lasR/lidR after extensive testing.
 
 ### Stage 2: Canopy metrics
-The next step was to estimate canopy metrics from the canopy height models. The methodology here is described in detail in the corresponding publication, but generally, these are all relatively simple calculations. Neighborhoods are not needed here, so everything is embarassingly parallel in the truest sense. 
+The next step was to estimate canopy metrics from the canopy height models. The methodology here is described in detail in the publication, but generally, these are all simple calculations. Neighborhoods are not needed here, so everything is embarassingly parallel in the truest sense. Each task will calculate metrics on a per-pixel basis and then rasterize the output into the correct output folder. 
 
 ### Stage 3: SVF
-Calculating the skyview factor is a separate stage because it relies on GRASS GIS [r.skyview](https://grass.osgeo.org/grass-stable/manuals/addons/r.skyview.html), instead of R. Here, a single merged CHM for the whole AOI is expected as input. The reason for that is, again, to avoid edge artifacts since the SVF needs pixel neighborhood information.
+Calculating the skyview factor is a separate stage because it relies on GRASS GIS [r.skyview](https://grass.osgeo.org/grass-stable/manuals/addons/r.skyview.html), instead of R. Here, a single merged CHM for the whole AOI is expected as input. Reasons for that are to avoid both edge artifacts and more tiling/neighborhood operations. 
+
+In terms of settings, we adhered to [Dirksen et al. (2019)](https://www.sciencedirect.com/science/article/pii/S2212095519300604), who recommended estimating SVF on a 1 m resolution with a radius of 100 meters and 16 search directions. 
+
+Dirksen, M., Ronda, R. J., Theeuwes, N. E., & Pagani, G. A. (2019). Sky view factor calculations and its application in urban heat island studies. Urban climate, 30, 100498.
 
 ## OTHER STATIC VARIABLES
-We created many scripts generating and preparing additional static predictors used by the model related to topography, water presence and built-up matter. Some examples include:
+We created many scripts generating additional static predictors for the model related to topography, water presence and built-up matter. Some examples include:
 
 * Elevation, slope, slopeaspect (Eastness/Southness), and ruggedness
 * Water presence, distance to oceans/inland water bodies
 * Building presence, height, and distance from buildings
 * Presence of other impervious surfaces (concrete roads and sealed surfaces)
 * Rocky outcrop presence 
-* 
 
-The topographic rasters are derived from the 2021 [City of Helsinki digital elevation model](https://hri.fi/data/en_GB/dataset/helsingin-korkeusmalli). Water, building, and other rasters are derived from the 2024 [Helsinki region land cover data set](https://www.hsy.fi/en/environmental-information/open-data/avoin-data---sivut/helsinki-region-land-cover-dataset/). These are generally simple data preparation steps, that do not warrant long documentation. Most involve rasterization to the same 1 m grid template and then upscaling to the 10 m prediction grid.  
+The topographic features derived from the 2021 [City of Helsinki digital elevation model](https://hri.fi/data/en_GB/dataset/helsingin-korkeusmalli). Water, building, and other rasters are derived from the 2024 [Helsinki region land cover data set](https://www.hsy.fi/en/environmental-information/open-data/avoin-data---sivut/helsinki-region-land-cover-dataset/). These are simple data preparation steps, that do not warrant long documentation. Most involve rasterization to the same 1 m grid template and then upscaling to the 10 m prediction grid.  
 
-Building height is interesting insofar it requires the merged CHM to be masked by a building mask.
+Building height is a separate script, because it requires the merged CHM to be masked by a building mask.
 # DYNAMIC VARIABLES
 ## REMODELING DATA
-We downloaded and tested both ERA5-Land and CERRA-Land data as reference data sets of ambient climate. CERRA has a better spatial resolution but worse time resolution than ERA-5 Land, so it likely captures the ocean-land climatic gradient better. 
+We downloaded and tested both ERA5-Land and CERRA-Land data as reference data sets of ambient climate. CERRA has a better spatial but worse time resolution than ERA-5 Land, so it likely captures the ocean-land climatic gradient better. 
 
 ## MICROCLIMATE MEASUREMENTS
 ### CLF CONVERSION
