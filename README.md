@@ -23,6 +23,5 @@ For acknowledgements related to the research in which Helmi was published, pleas
 ## A note on HPC
 High-performance computing (HPC) was used to (pre-)process airborne laser scanning (ALS) tiles and for model training, testing, and predictions. ALS data sets are often composed of hundreds of tiles, making them suitable for (almost) embarassingly parallel HPC processing. We used CSC's Puhti supercomputer and want to acknowledge the computational resources contributed by CSC here. Unfortunately, Puhti will be decommissioned in Spring 2026. Although this may affect the reproducibility of the provided scripts, it should be (relatively) straightforward to adapt the steps to a different HPC system, as the general SLURM/Lustre-related logic will be similar.
 
-# Technical documentation
-
-More in-depth technical documentation of the content of the repository content can be found in: 
+## Technical documentation
+More in-depth technical documentation of the repository content can be found in: 

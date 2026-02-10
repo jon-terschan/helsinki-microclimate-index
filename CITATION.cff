@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: Helmi - Helsinki Microclimate Index
+message: Please cite the model using these metadata.
+type: software
+authors:
+  - given-names: Jonathan
+    family-names: Terschanski
+    email: j.terschanski@posteo.net
+    affiliation: University of Helsinki
+    orcid: 'https://orcid.org/0009-0002-5195-8086'
+repository-code: 'https://github.com/jon-terschan/scripts'
+abstract: >-
+  The Helsinki Microclimate Index (Helmi) is a predictive
+  machine-learning model of Summer near-ground temperatures
+  in Helsinki parks and urban forests.
+keywords:
+  - machine-learning
+  - remote-sensing
+  - microclimate
+  - urban climate
+  - temperatures
+license: MIT
+version: '0.1'
