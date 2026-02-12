@@ -3,4 +3,4 @@
 # =========================
 MODELING/02_model/models/*.rds
 DATA/*
-
+DATA/
