@@ -1,55 +1,41 @@
-set.seed(42)
+# -------------------------------
+# FINAL MODEL FIT
+# -------------------------------
+# this should be run after tuning and summarizing the tuning results
+# can be run locally, but the prerequisites must be downloaded from HPC first
 library(ranger)
-library(fastshap)
+library(dplyr)
 
-# load training data
-train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/06_final_train.rds")
+# -------------------------------
+# PARAMS
+# -------------------------------
+# model specs EDIT before running
+source("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/03.4_model_specs.R")
+# train data CHECK before running
+train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
+# extract best params from aggregate table
+tuning_summary <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/tuning_results/tuning_summary.rds")
+best_params <- tuning_summary %>%
+  arrange(mean_rmse) %>%
+  slice(1)
+best_params
 
-# define predictors
-predictors <- setdiff(
-  names(train),
-  c("temp", "time", "fold", "id", "sensor_id", "sensor_channel")
+# -------------------------------
+# MODEL FIT
+# -------------------------------
+rf_final <- ranger(
+  formula = formula_rf,
+  data = train,
+  num.trees = rf_fixed$num.trees,
+  mtry = best_params$mtry,
+  min.node.size = best_params$min.node.size,
+  sample.fraction = best_params$sample.fraction,
+  importance = rf_fixed$importance,
+  #respect.unordered.factors = rf_fixed$respect.unordered.factors,
+  seed = rf_fixed$seed
 )
 
-# fit baseline RF
-rf <- ranger(
-  formula = temp ~ .,
-  data = train[, c("temp", predictors)],
-  num.trees = 800,
-  mtry = floor(sqrt(length(predictors))),
-  min.node.size = 10,
-  importance = "permutation",
-  respect.unordered.factors = "order",
-  sample.fraction = 0.8,
-  seed = 42
+# save output
+saveRDS(
+  rf_final, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/models/helmi_final.rds"
 )
-
-# ---- SHAP ----
-
-pred_fun <- function(object, newdata) {
-  predict(object, data = newdata)$predictions
-}
-
-# design matrix
-X <- train[, predictors]
-
-# subsample for SHAP
-set.seed(42)
-idx <- sample(seq_len(nrow(train)), 2000)
-X_sub <- X[idx, ]
-
-shap <- fastshap::explain(
-  object       = rf,
-  X            = X_sub,
-  pred_wrapper = pred_fun,
-  nsim         = 100
-)
-
-plot(
-  X_sub$t2m,
-  shap$t2m,
-  xlab = "ERA5 t2m",
-  ylab = "SHAP value (effect on predicted temp)",
-  pch = 16, col = rgb(0,0,0,0.3)
-)
-abline(h = 0, col = "red")

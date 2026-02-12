@@ -1,7 +1,10 @@
-# ===============================
-# 03.1_tuning_local.R
-# Spatio-temporal CV preparation
-# ===============================
+# -------------------------------
+# LOCAL PREP FOR TUNING
+# -------------------------------
+# this mainly consists of creating the spatio temporal folds for tuning
+# and the hyperparameter tuning grid which will serve as indexer
+# dont run this without carefully reviewing the appripriateness of each step
+# can be run locally as its just prep for HPC tuning 
 
 library(sf)
 library(dplyr)
@@ -75,28 +78,28 @@ cv_sp <- cv_spatial(
 # -------------------------------
 # 4) SANITY PLOT 1: spatial folds
 # -------------------------------
-png("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model//spatial_folds.png",
-    width = 2000, height = 1600, res = 200)
+#png("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model//spatial_folds.png",
+#    width = 2000, height = 1600, res = 200)
 
-plot(st_geometry(sensor_sf),
-     col = cv_sp$folds_ids,
-     pch = 19,
-     main = "Spatial CV folds (sensor-level)",
-     axes = TRUE)
+#plot(st_geometry(sensor_sf),
+#    col = cv_sp$folds_ids,
+#     pch = 19,
+#     main = "Spatial CV folds (sensor-level)",
+#     axes = TRUE)
 
-legend("topright",
-       legend = paste("Fold", sort(unique(cv_sp$folds_ids))),
-       col = sort(unique(cv_sp$folds_ids)),
-       pch = 19,
-       bty = "n")
+#legend("topright",
+#       legend = paste("Fold", sort(unique(cv_sp$folds_ids))),
+#       col = sort(unique(cv_sp$folds_ids)),
+#       pch = 19,
+#       bty = "n")
 
-dev.off()
+#dev.off()
 
 # -------------------------------
 # 5) Inspect fold balance
 # -------------------------------
 print(table(cv_sp$folds_ids))
-
+c
 # -------------------------------
 # 6) Map spatial folds back to rows
 # -------------------------------
@@ -149,7 +152,9 @@ for (s in sort(unique(train$spatial_fold))) {
   }
 }
 
+glimpse(train)
 message("Total spatio-temporal folds: ", length(folds))
+glimpse(folds)
 
 # -------------------------------
 # 9) SANITY PLOT 2: fold sizes
@@ -170,99 +175,65 @@ dev.off()
 summary(fold_sizes)
 
 # -------------------------------
-# 10) Save frozen artifacts
+# 10) Save folded training data
 # -------------------------------
-saveRDS(folds, "tuning/st_folds.rds")
+# ADD ALS PREDICTORS LATER
+# this is a first gate and defines the list of all possible predictors
+# you do not need to make a definitive choice here, as that will be done in the model specs 
+response <- "temp"
 
-df_model <- st_drop_geometry(train)
-saveRDS(df_model, "tuning/data_model.rds")
-
-
-# --------------------------------
-# GRID SUMMARY FOR VISUALIZATION
-# --------------------------------
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-library(sf)
-
-plot_df <- train %>%
-  st_drop_geometry() %>%
-  mutate(
-    month = month(time),
-    spatial_fold = factor(spatial_fold),
-    time_fold    = factor(time_fold)
-  ) %>%
-  filter(month %in% 5:9)
-
-# Expand data: one copy per (spatial_fold, time_fold) panel
-plot_df <- plot_df %>%
-  tidyr::crossing(
-    panel_spatial = levels(plot_df$spatial_fold),
-    panel_time    = levels(plot_df$time_fold)
-  ) %>%
-  mutate(
-    set = ifelse(
-      spatial_fold == panel_spatial &
-      time_fold    == panel_time,
-      "Test", "Train"
-    ),
-    set = factor(set, levels = c("Train", "Test"))
-  )
-
-cv_grid_plot <- ggplot(
-  plot_df,
-  aes(x = month, y = temp, color = set)
-) +
-  geom_point(
-    alpha = 0.6,
-    size = 1.8
-  ) +
-  scale_color_manual(
-    values = c(Train = "steelblue", Test = "red")
-  ) +
-  scale_x_continuous(
-    breaks = 5:9,
-    labels = c("May", "Jun", "Jul", "Aug", "Sep")
-  ) +
-  facet_grid(
-    rows = vars(panel_spatial),
-    cols = vars(panel_time)
-  ) +
-  labs(
-    title = "Spatio-temporal cross-validation structure",
-    subtitle = "Each panel holds out one spatial × temporal block",
-    x = "Month",
-    y = "Temperature",
-    color = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "bottom",
-    strip.text = element_text(face = "bold"),
-    panel.grid.minor = element_blank()
-  )
-
-cv_grid_plot
-
-# -------------------------------
-# 4) Save to file
-# -------------------------------
-
-ggsave(
-  filename = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/st_cv_structure_5x5.png",
-  plot = cv_grid_plot,
-  width = 14,
-  height = 12,
-  dpi = 300
+predictors <- c(
+  "SMC", "bldg_dist", "bldg_frac_10m", "bldg_frac_mean_50m", "dtm", "eastness", "imperv_frac",
+  "imperv_frac_50m", "ocean_dist", "ocean_frac", "rock_frac", "ruggedness", "slope", "southness", 
+  "water_dist", "water_frac", "t2m", "ssrd", "tp", "wind_s", "hour_sin", "hour_cos", "doy_sin", "doy_cos"
 )
 
+glimpse(train_model)
+model_vars <- c(response, predictors, "spatial_fold", "time_fold")
 
-# placeholders for later
-# predictors <- ...
-# saveRDS(predictors, "tuning/predictors.rds")
+train_model <- train_model[, model_vars]
 
-# param_grid <- ...
-# saveRDS(param_grid, "tuning/param_grid.rds")
+# factor handling FOR LAND COVER ADD LATER
 
-saveRDS(list(metric = "RMSE"), "tuning/tuning_meta.rds")
+# drop geogmetry if still present and then
+train_model <- train %>%
+  st_drop_geometry()  
+saveRDS(train_model,
+        "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds",
+        compress = "xz")
+
+# superfluous but i also export a lookup table of the folds    
+fold_def <- train_model %>%
+  distinct(spatial_fold, time_fold) %>%
+  arrange(spatial_fold, time_fold)
+saveRDS(fold_def, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/folds/fold_defs.rds")
+
+# -------------------------------
+# 11) HYPERPARAMETER GRID
+# -------------------------------
+# ADD ALS PREDICTORS LATER
+# 
+library(data.table)
+
+# check the full number of predictors, it makes 0 sense
+# to test mtry > n predictors
+p <- length(predictors)
+message("Number of predictors: ", p)
+
+# establish grid
+param_grid <- CJ(
+  mtry = c(5, 8, 12, 18, 24),
+  min.node.size = c(5, 10, 20, 40),
+  sample.fraction = c(0.6, 0.8)
+)
+param_grid[, param_id := .I]
+setcolorder(param_grid,
+            c("param_id",
+              "mtry",
+              "min.node.size",
+              "sample.fraction")
+              )
+#print(param_grid)
+
+# save
+saveRDS(param_grid, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/tuning_grid_40.rds", compress = "xz")

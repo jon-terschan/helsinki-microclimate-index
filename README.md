@@ -1,10 +1,19 @@
 # HELMI - Helsinki Microclimate Index: A predictive machine-learning model of Summer near-ground temperatures in Helsinki parks and urban forests
 
+Helmi can predict **hourly near-ground air temperatures in Helsinki parks and urban forests** during the **leaf-on period (Summer)** at a **spatial resolution of 10 meters**. Helmi cannot predict temperatures in non-park environments and in other Seasons than Summer. Care should be taken when dealing with predictions in gardens. Although Helmi was trained with data from gardens, it was not specifically engineered to perform in these environments and predictions may be much 
+
+
 A short summary of the model, performance metrics and limitations. Helmi's target domain is urban parks and forests. High-performance computing (HPC), in particular CSC's Puhti supercomputer (decommissioned in Spring 2026) was used to process airborne laser scanning (ALS) tiles and for model training, tuning, and predictions.
 
-## Performance
+We used spatiotemporal cross-validation to evaluate and tune the model. We retrained the production model with the best performing hyperparameters and predicted over an external data set from Kumpula Botanical Garden.
 
-Performance overview.
+## Performance
+Hyperparameters were tuned by minimizing mean RMSE, MSE, and bias across 25 spatiotemporal cross-validation folds.
+
+Helmi's performance with the best performing hyperparameter set:
+* Mean RMSE
+* Mean MSE
+* R2 (treat with care)
 
 ## Limitations
 
@@ -14,6 +23,7 @@ Limitations overview.
 
 * Change model to XGBoost
 * Incorporate detailed cloud information (e.g., hourly METEOSAT cloud masks) into the model.
+* Add variants: If interpolation is the goal and no historic data is needed, it would be smart to try out MEPS as ambient reference
 * Add more ERA5-Land fields (radiation flow, wind) as dynamic predictors.  
 
 ## Acknowledgements
