@@ -29,7 +29,8 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(lubridate)
-library(arrow) # for parquet
+library(sf)
+library(arrow)
 
 # folder with CLF files. There is no further quality control here, so this should all be done in an earlier time step
 csv_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/11.25/processed/4_finetuning/output"
@@ -309,7 +310,7 @@ train <- train_joined %>%
     doy_cos = cos(2 * pi * doy / 365)
     ) %>%
   select(-hour, -doy)
-
+str(train)
 # str(train)
 saveRDS(train, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/06_final_train.rds")
 

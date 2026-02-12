@@ -1,10 +1,11 @@
-# HELMI - Helsinki Microclimate Index: A predictive model of Summer near-ground temperatures in Helsinki parks and urban forests
+# HELMI - Helsinki Microclimate Index: A predictive model of Summer near-ground temperatures in Helsinki urban green spaces🌲☀️
 
-Helmi is a machine learning model (random forest) that can predict **hourly near-ground air temperatures in Helsinki parks and urban forests** during the **leaf-on period (Summer)** at a **spatial resolution of 10 meters**. Helmi uses in-situ temperature observations, canopy structure, sky occlusion, meteorological reference data, and land cover (see Predictors)
+Helmi is a machine learning model (random forest) that can predict **hourly near-ground air temperatures in Helsinki parks and urban forests** during the **leaf-on period (Summer)** at a **spatial resolution of 10 meters**. Helmi uses in-situ temperature observations from the [Helsinki Microclimate and Phenology Observatory (HELMO-HELPO)](https://www.helsinki.fi/en/researchgroups/tree-d-lab/research/urban-microclimate-phenology-observatories), canopy structure, sky occlusion, meteorological reference data, and land cover (see Predictors)
 
 This repository contains the full codebase for the (pre-)processing of predictors and tuning/training of Helmi. It contains some scripts designed to run on high-performance computing (HPC) systems, in particular CSC's Puhti supercomputer (decommissioned in Spring 2026), which was used to process airborne laser scanning (ALS) data and for model tuning and predictions.
 
 ## Performance
+
 We tuned hyperparameters by minimizing mean errors (RMSE, MSE, and bias) across 25 spatiotemporal cross-validation folds.
 Helmi's performance with the best performing hyperparameter set:
 
@@ -15,6 +16,7 @@ Helmi's performance with the best performing hyperparameter set:
 Helmi's production version was also externally validated by predicting over an external data set from Kumpula Botanical Garden.
 
 ## Limitations
+
 Helmi cannot predict temperatures
 
 * in non-park and forests urban environments, i.e., in and around "concrete jungle", as it was trained on temperature observations in vegetated urban areas.

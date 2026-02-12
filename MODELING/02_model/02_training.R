@@ -36,6 +36,7 @@ rf_final <- ranger(
 )
 
 # save output
-saveRDS(
-  rf_final, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/models/helmi_final.rds"
+saveRDS(rf_final, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/models/helmi_final.rds"
 )
+
+glimpse(rf_final)
