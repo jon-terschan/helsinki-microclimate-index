@@ -1,8 +1,8 @@
 # HELMI - Helsinki Microclimate Index: A predictive model of Summer near-ground temperatures in Helsinki urban green spaces🌲☀️
 
-Helmi is a machine learning model (random forest) that can predict **hourly near-ground air temperatures in Helsinki parks and urban forests** during the **leaf-on period (Summer)** at a **spatial resolution of 10 meters**. Helmi uses in-situ temperature observations from the [Helsinki Microclimate and Phenology Observatory (HELMO-HELPO)](https://www.helsinki.fi/en/researchgroups/tree-d-lab/research/urban-microclimate-phenology-observatories), canopy structure, sky occlusion, meteorological reference data, and land cover (see Predictors)
+Helmi is a random forest model that can predict **hourly near-ground air temperatures in Helsinki parks and urban forests** during the **leaf-on period (Summer)** at a **spatial resolution of 10 meters**. Helmi converges in-situ temperature observations from the [Helsinki Microclimate and Phenology Observatory (HELMO-HELPO)](https://www.helsinki.fi/en/researchgroups/tree-d-lab/research/urban-microclimate-phenology-observatories) with open data canopy structure, sky occlusion, meteorological reference data, and land cover (see Predictors)
 
-This repository contains the full codebase for the (pre-)processing of predictors and tuning/training of Helmi. It contains some scripts designed to run on high-performance computing (HPC) systems, in particular CSC's Puhti supercomputer (decommissioned in Spring 2026), which was used to process airborne laser scanning (ALS) data and for model tuning and predictions.
+The full codebase for the (pre-)processing of predictors and tuning/training of Helmi is available. Some scripts are designed to run on high-performance computing (HPC) systems, in particular the Finnish Scientific Computational Center's (CSC) [Puhti supercomputer](https://docs.csc.fi/computing/systems-puhti/) (decommissioned in Spring 2026), which we used to process airborne laser scanning (ALS) data, to tune the model and to generate predictions.
 
 ## Performance
 
