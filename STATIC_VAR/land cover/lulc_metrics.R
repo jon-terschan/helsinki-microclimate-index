@@ -3,7 +3,6 @@
 # Outputs: Impervious fraction 10 m and 50 m neighborhood, rock fraction at 10 m, both in 10 m resolution
 # -----------------------------------------------------------------------------------------------------------
 # 
-
 # --- header ---
 library(terra)
 # inputs

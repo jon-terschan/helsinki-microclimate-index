@@ -35,8 +35,11 @@ Our approach creates an excessive amount of redundant calculations and outputs: 
 The next step was to estimate canopy metrics from the canopy height models. The methodology here is described in detail in the publication, but generally, these are all simple calculations. Neighborhoods are not needed here, so everything is embarassingly parallel in the truest sense. Each task will calculate metrics on a per-pixel basis and then rasterize the output into the correct output folder.
 
 ## Stage 3: SVF
-Calculating the skyview factor is a separate stage because it relies on GRASS GIS [r.skyview](https://grass.osgeo.org/grass-stable/manuals/addons/r.skyview.html), instead of R. Here, a single merged CHM for the whole AOI is expected as input. Reasons for that are to avoid both edge artifacts and more tiling/neighborhood operations.
+Calculating the skyview factor is a separate stage because it relies on GRASS GIS [r.skyview](https://grass.osgeo.org/grass-stable/manuals/addons/r.skyview.html), instead of R. In our implementation, a single merged raster is expected as input because we wanted to avoid both edge artifacts and introducing additional tiling/neighborhood logic to the scripts.
 
-In terms of settings, we adhered to [Dirksen et al. (2019)](https://www.sciencedirect.com/science/article/pii/S2212095519300604), who recommended estimating SVF on a 1 m resolution with a radius of 100 meters and 16 search directions.
+As input raster, we used our canopy height model because topographical sky occlusion in Helsinki urban parks and forests on 10 m resolution is negligible. In an area of interest characterized by steep topographical inclines and many height differences and such, we recommend calculating SVF using the digital surface model instead.
 
+In terms of calculation settings, we followed the recommendation of [Dirksen et al. (2019)](https://www.sciencedirect.com/science/article/pii/S2212095519300604) by estimating SVF on a 1 m resolution with a radius of 100 meters and 16 search directions.
+
+## References
 Dirksen, M., Ronda, R. J., Theeuwes, N. E., & Pagani, G. A. (2019). Sky view factor calculations and its application in urban heat island studies. Urban climate, 30, 100498.

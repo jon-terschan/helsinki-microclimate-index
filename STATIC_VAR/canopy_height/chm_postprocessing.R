@@ -45,3 +45,26 @@ chm_filled2 <- focal(
     )
   )
 )
+
+
+chm <- rast(out_file)
+
+ocean <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_sea_hel.gpkg")
+inland <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_water_hel.gpkg")
+water <- rbind(ocean, inland)
+water <- project(water,crs(chm))
+water_rast <- rasterize(water, chm, field=1)
+
+plot(water_rast)
+chm_filled <- chm 
+chm_filled[!is.na(water_rast)] <-0
+writeRaster(chm_filled, 
+"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/CHM_05m_Hel_fill_02.tif", 
+overwrite = TRUE,
+gdal = c(
+      "TILED=YES",
+      "COMPRESS=ZSTD",
+      "PREDICTOR=2",
+      "BIGTIFF=YES"
+    ))
+
