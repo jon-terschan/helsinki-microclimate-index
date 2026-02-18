@@ -12,6 +12,14 @@ Data sets used for this were the outcomes of our own ALS processing (LINK), the 
 These are simple repetitive data preparation and rasterization operations, that do not warrant long documentation. We usually rasterized vector data to the same 1 m grid template based on the DTM and then calculated whichever metric to the same 10 m prediction grid.
 
 # VEGETATION
+## LOCAL CANOPY METRICS
+Local refers to the method of calculation, these metrics (CC, uCC, PAIe) were calculated using assumed occlusion by point density above ground on a per-pixel basis - they are local in the sense that they are not neighborhood aware, fully vertical, and don't consider hemispherical effects at all. Because these are quite simple raster math and the resolution is not too high, it is entirely possible to calculate these locally in a few hours. HPC scripts for them are also available (and should work). The local-HPC split here is fully due to logistical reasons (HPC quotas) and the necessity to rerun multiple things at the same time.
+
+## FOCAL CANOPY METRICS
+These are essentially angle-weighted corrections of gap fraction/PAI and CC, (canopy closure) that utilize mean scan angle weighting during the calculation to simulate hemispherical effects. The focal nature of the calculation means pixels on tile edges will suffer from edge degradation unless they can retrieve neighborhood information - so this demands for a focal workflow and that is why these metrics are calculated separately from the rest.
+
+These are closer to biophysical measurements, but should not be treated synonymously. ALS scan angles do not cover the full hemisphere because they typically don't exceed 20*, so it is best to think of them as truncated metrics. More complex corrections are entirely possible, but since we don't actually model any biophysical processes (e.g. radiative transfer) and HELMI is fully correlative, we do not really expect predictive performance to improve if these metrics "get closer to reality".
+
 ## CANOPY MAX HEIGHT
 During (LINK) the ALS processing, we created a canopy height model of Helsinki with a very high spatial resolution (0.5 m). We post-processed the CHM by filling missing pixels with the maximum nearest neighbor value in two passes, to remove some of the calculation artifacts. The resulting CHM still contains some holes, but not inside the relevant domain (vegetated surface). We also used the rasterized water mask from the land cover data set to set all water pixels to a height of 0 m, as triangulation artifacts and NAs would otherwise mess with the SVF estimation (LINK).
 
