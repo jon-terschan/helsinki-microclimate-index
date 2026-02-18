@@ -9,7 +9,7 @@ library(terra)
 # USER PATHS
 # -------------------------
 input_dir  <- "E:/ALS/stage1_output_12.2/norm"
-output_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/canopy_metrics"
+output_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/loc_canopy_metrics"
 master_template_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
 
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -41,8 +41,11 @@ canopy_height       <- 2
 upper_canopy_height <- 10
 z_min               <- 0.2
 pai_k               <- 0.5
-min_points_cell     <- 3
+#min_points_cell     <- 3
 
+# -------------------------
+# METRIC FUNCTION
+# -------------------------
 # -------------------------
 # METRIC FUNCTION
 # -------------------------
@@ -50,21 +53,57 @@ cm_fun <- function(z) {
 
   N_all <- length(z)
 
+  # NA for completely empty cell
+  # should not exist in ALS data at 10m res, but defensive coding yadayada
   if (N_all == 0) {
     return(list(CC=NA_real_, PAI=NA_real_, CLOS=NA_real_, UCC=NA_real_, N=0))
   }
 
+  # Remove very low noise points, these may be artifacts of triangulation
+  # and subsequent normalization
   zf <- z[z > z_min]
 
-  if (length(zf) < min_points_cell) {
-    return(list(CC=NA_real_, PAI=NA_real_, CLOS=NA_real_, UCC=NA_real_, N=N_all))
+  # if nothing exists above the ground noise threshold we consider it open ground
+  if (length(zf) == 0) {
+    return(list(CC=0, PAI=0, CLOS=0, UCC=0, N=N_all))
   }
 
-  gf  <- sum(zf < canopy_height) / length(zf)
-  CC  <- sum(zf > canopy_height) / length(zf)
-  UCC <- sum(zf > upper_canopy_height) / length(zf)
+  # -------------------------
+  # gap fraction stabilisation
+  # -------------------------
+  # so there is many problems in estimating beer-lambert GF from 
+  # ALS, one issue is that point returns are a poor indicator of
+  # light permeability in certain cases, especially forest edges, where forests are usually
+  # extremely permeable due to the frontier.
+  # i tried forcing gf away from 0 and 1s using epsilon clamps, but it created
+  # insane PAI values in forest ages, so I switched to apply a pseudo-count (Laplace smoothing).
+  #
+  # This avoids:
+  #   gf = 0  (infinite PAI in dense canopy)
+  #   gf = 1  (log(1) = 0 edge instability)
+  #
+  # Ecologically this is maybe a bit better at forest edges where discrete ALS
+  # sampling may miss sub-canopy returns, nevertheless
+  # i wouldnt call this PAI and more like "PAI"
+  #
+  # Formula:
+  #   gf = (k + 1) / (n + 2)
+  #
+  # This guarantees:
+  #   0 < gf < 1  always
+  # -------------------------
 
-  PAI <- if (gf <= 0 || gf >= 1) NA_real_ else -log(gf) / pai_k
+  k_ground <- sum(zf < canopy_height)
+  n_total  <- length(zf)
+
+  gf  <- (k_ground + 1) / (n_total + 2)
+
+  # canopy metrics
+  CC  <- sum(zf > canopy_height) / n_total
+  UCC <- sum(zf > upper_canopy_height) / n_total
+
+  # "PAI"
+  PAI <- -log(gf) / pai_k
 
   list(CC=CC, PAI=PAI, CLOS=CC, UCC=UCC, N=N_all)
 }
@@ -72,7 +111,7 @@ cm_fun <- function(z) {
 # -------------------------
 # BATCH SETTINGS
 # -------------------------
-batch_size <- 100
+batch_size <- 400
 
 existing_batches <- list.files(
   output_dir,

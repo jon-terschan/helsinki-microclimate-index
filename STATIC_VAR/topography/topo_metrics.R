@@ -118,3 +118,40 @@ writeRaster(slope, slope_file, overwrite = TRUE, datatype = "FLT4S", gdal = "COM
 writeRaster(eastness, eastness_file, overwrite = TRUE, datatype = "FLT4S", gdal = "COMPRESS=LZW")
 writeRaster(southness, southness_file, overwrite = TRUE, datatype = "FLT4S", gdal = "COMPRESS=LZW")
 writeRaster(rugged, rugged_file, overwrite = TRUE, datatype = "FLT4S", gdal = "COMPRESS=LZW")
+
+
+## TPI ##
+# --- TPI (Topographic Position Index) ---
+out_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/predictorstack/"
+
+dtm <- file.path(out_dir, "/DTM_10m_Helsinki.tif") 
+dtm <- rast(dtm)
+master <- rast("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif")
+ext(master)
+compareGeom(master, dtm)
+# project/align exactly to master geometry
+dtm_master <- project(
+  dtm_all,
+  master,
+  method = "bilinear"
+)
+
+# 5x5 window (~50 m at 10 m resolution)
+w_tpi <- matrix(1, 5, 5)
+
+# mean elevation of neighborhood
+mean_neigh <- focal(
+  dtm,
+  w = w_tpi,
+  fun = mean,
+  na.rm = TRUE,
+  pad = TRUE
+)
+
+# TPI = cell elevation - neighborhood mean
+tpi <- dtm - mean_neigh
+
+# export
+tpi_file <- file.path(out_dir, "/TPI_50m_10m_Helsinki.tif")
+writeRaster(tpi, tpi_file, overwrite = TRUE, datatype = "FLT4S", gdal = "COMPRESS=ZSTD")
+global(tpi, c("min", "max", "mean", "sd"), na.rm=TRUE)
