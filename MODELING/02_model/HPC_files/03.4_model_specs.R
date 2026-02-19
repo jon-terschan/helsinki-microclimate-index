@@ -5,14 +5,22 @@
 
 response <- "temp"
 
-predictors <- c(
-  "SMC", "bldg_dist", "bldg_frac_10m", "bldg_frac_mean_50m",
-  "dtm", "eastness", "imperv_frac", "imperv_frac_50m",
-  "ocean_dist", "ocean_frac", "rock_frac", "ruggedness",
-  "slope", "southness", "water_dist", "water_frac",
-  "t2m", "ssrd", "tp", "wind_s",
-  "hour_sin", "hour_cos", "doy_sin", "doy_cos"
-)
+train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
+
+# exclude the things that are no predictors here
+predictors <- train %>%
+  select(-sensor_id,
+         -sensor_channel,
+         -time,
+         -temp,
+         -spatial_fold,
+         -time_fold,
+         -x,
+         -OOS,
+         -y)
+
+predictors <- c(names(predictors))
+predictors
 
 formula_rf <- as.formula(
   paste(response, "~", paste(predictors, collapse = " + "))

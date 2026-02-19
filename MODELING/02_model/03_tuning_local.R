@@ -16,7 +16,7 @@ set.seed(42)
 # -------------------------------
 # 0) Load data and extract coords
 # -------------------------------
-train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/06_final_train.rds")
+train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/06_train_data.rds")
 
 coords <- st_coordinates(train)
 train$x <- coords[, 1]
@@ -178,26 +178,12 @@ summary(fold_sizes)
 # 10) Save folded training data
 # -------------------------------
 # ADD ALS PREDICTORS LATER
-# this is a first gate and defines the list of all possible predictors
-# you do not need to make a definitive choice here, as that will be done in the model specs 
-response <- "temp"
-
-predictors <- c(
-  "SMC", "bldg_dist", "bldg_frac_10m", "bldg_frac_mean_50m", "dtm", "eastness", "imperv_frac",
-  "imperv_frac_50m", "ocean_dist", "ocean_frac", "rock_frac", "ruggedness", "slope", "southness", 
-  "water_dist", "water_frac", "t2m", "ssrd", "tp", "wind_s", "hour_sin", "hour_cos", "doy_sin", "doy_cos"
-)
-
-glimpse(train_model)
-model_vars <- c(response, predictors, "spatial_fold", "time_fold")
-
-train_model <- train_model[, model_vars]
-
 # factor handling FOR LAND COVER ADD LATER
 
 # drop geogmetry if still present and then
 train_model <- train %>%
   st_drop_geometry()  
+
 saveRDS(train_model,
         "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds",
         compress = "xz")
@@ -206,17 +192,30 @@ saveRDS(train_model,
 fold_def <- train_model %>%
   distinct(spatial_fold, time_fold) %>%
   arrange(spatial_fold, time_fold)
-saveRDS(fold_def, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/folds/fold_defs.rds")
+
+saveRDS(fold_def, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_defs.rds")
 
 # -------------------------------
 # 11) HYPERPARAMETER GRID
 # -------------------------------
 # ADD ALS PREDICTORS LATER
-# 
 library(data.table)
 
-# check the full number of predictors, it makes 0 sense
+# check the full number of predictors
 # to test mtry > n predictors
+predictors <- train %>%
+  select(-sensor_id,
+         -sensor_channel,
+         -time,
+         -temp,
+         -geom,
+         -spatial_fold,
+         -time_fold,
+         -OOS,
+         -x,
+         -y)
+
+pred <- c(names(predictors))
 p <- length(predictors)
 message("Number of predictors: ", p)
 

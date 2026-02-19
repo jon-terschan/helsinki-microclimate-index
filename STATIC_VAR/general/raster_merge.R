@@ -42,6 +42,7 @@ compareGeom(master_template, merged_raster)
 all(res(master_template) == res(merged_raster)) &&
 all(origin(master_template) == origin(merged_raster)) &&
 crs(master_template) == crs(merged_raster)
+ext(merged_raster)
 # adjust merged raster to master template (assuming they have same grid origin, res and only differ in extent.)
 merged_raster <- extend(merged_raster, master_template)
 merged_raster <- crop(merged_raster, master_template)

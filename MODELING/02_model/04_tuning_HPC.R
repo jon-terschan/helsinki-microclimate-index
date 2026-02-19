@@ -8,7 +8,7 @@ set.seed(42)
 # ------------------------------------------
 # DEBUG SETTINGS
 # ------------------------------------------
-MAX_FOLDS <- 2   # set to Inf for full CV
+MAX_FOLDS <- Inf   # set to Inf for full CV
 
 # ------------------------------------------
 # 1) IDENTIFY PARAM ID TO SLURM

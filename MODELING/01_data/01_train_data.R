@@ -15,7 +15,6 @@
 
 # training data generation split
 # output, training data table
-source("scripts/00_config.R")
 
 ##############################################################
 # ----- CONVERT CLF FORMAT TO LONG, AGGREGATE TO HOURLY  ----- 
@@ -42,7 +41,7 @@ out <- vector("list", length(files))
 for (i in seq_along(files)) {
   f <- files[i]
   # Extract numeric sensor ID from filename
-  # Assumes filenames contain an underscore followed by digits
+  # Assumes filenames contain an underscore followed by digits, this is all a CLF (common logger format convention set earlier)
   sensor_id <- sub("^[^_]+_([0-9]+).*", "\\1", basename(f)) # absurd regex to extract the numeric part (sensor id)
   df <- read_csv(f, show_col_types = FALSE) # read csv
   # ensure OOS exists, might have forgotten it somewhere in asensor without problems
@@ -82,31 +81,32 @@ for (i in seq_along(files)) {
   out[[i]] <- df_hourly # store per file result
 }
 
-df_all_hourly <- bind_rows(out) # combine all sensors into one long hourly table
-#glimpse(df_all_hourly) #check integrity
-
-# save and load from disk
-saveRDS(df_all_hourly, file = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/01_df_all_hourly.rds")
+df_all_hourly <- bind_rows(out) # combine all sensors into an hourly measurement table in long data format
+# thhis will the basis for the train data table
+#glimpse(df_all_hourly) # check table integrity
+# save to disk
+saveRDS(df_all_hourly, file = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/01_df_all_hourly.rds")
 
 ##############################################################
 # ----- FILTER TO SUMMER, IN-CANOPY TRAINING DATA ---------- 
 ##############################################################
+# here we filter out non necessary data
 #  - channel t3, which is air temperature in CLF
 #  - non-OOS observations
 #  - summer season (May 20 – Sep 10)
-df_all_hourly <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/01_df_all_hourly.rds")
+df_all_hourly <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/01_df_all_hourly.rds")
 
 df_t3_summer <- df_all_hourly %>%
   filter(
     sensor_channel == "t3",
     OOS == 0,
     !is.na(temp),
-    yday(time) >= 140,   # May 20, EDIT
-    yday(time) <= 253    # Sep 10, EDIT
+    yday(time) >= 121,   # May 20 = 140, EDIT, 1. of may = 121
+    yday(time) <= 273    # Sep 10 = 253, EDIT, 30.09 = 273
   )
 
 # save to disk
-saveRDS(df_t3_summer, file = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/02_df_train_summer.rds")
+saveRDS(df_t3_summer, file = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/02_df_filtered.rds")
 # glimpse(df_t3_summer)
 
 ##############################################################
@@ -125,7 +125,7 @@ target_crs <- 3879  # ETRS-TM35FIN
 # ---- combine spatial index files ----
 # read original and current tile index files
 gpk1 <- st_read(
-  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/helmo_map/helmostatus_11.25.gpkg",
+  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/site_locations/helmostatus_11.25.gpkg",
   quiet = TRUE
 ) %>%
   st_transform(target_crs) %>%
@@ -135,7 +135,7 @@ gpk1 <- st_read(
   )
 
 gpk2 <- st_read(
-  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/helmo_map/helmostatus_original.gpkg",
+  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/site_locations/helmostatus_original.gpkg",
   quiet = TRUE
 ) %>%
   st_transform(target_crs) %>%
@@ -150,10 +150,18 @@ stations <- bind_rows(
   gpk2 %>%
     filter(!sensor_id %in% gpk1$sensor_id)
 )
+stations <- stations %>%
+  filter(!is.na(sensor_id), !st_is_empty(geom)) %>%
+  group_by(sensor_id) %>%
+  summarise(geom = st_centroid(st_union(geom)), .groups = "drop")
+
+stations %>% # check for duplicates or NAs
+  count(sensor_id) %>%
+  filter(n > 1)
 
 # ---- join spatial index files with training data ----
 # load training data file
-df_t3_summer <-readRDS(file = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/02_df_train_summer.rds")
+df_t3_summer <-readRDS(file = "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/02_df_filtered.rds")
 
 # join train training data file with spatial index
 df_train <- df_t3_summer %>%
@@ -170,7 +178,7 @@ df_train_sf <- st_as_sf(
 )
 
 # write to disk
-st_write(df_train_sf, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/03_stations_training.gpkg", delete_dsn = TRUE)
+st_write(df_train_sf, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/03_stations_training.gpkg", delete_dsn = TRUE)
 
 ##############################################################
 # ----- LOAD AND ALIGN ALL STATIC RASTERS ------------------ 
@@ -255,9 +263,58 @@ glimpse(stations_pred)
 # write intermediary result to disk
 st_write(stations_pred, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/04_training_static.gpkg", delete_dsn = TRUE)
 
+
+
+library(terra)
+library(sf)
+library(dplyr)
+
+##############################################################
+# ALT2: LOAD PREDEFINED PREDICTOR STACK
+##############################################################
+# Load pre-built multiband raster stack
+r_stack <- rast(
+  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/predictorstack/full_stack/pred_stack_10m.tif"
+)
+
+names(r_stack)   
+crs(r_stack)     
+
+# load stations
+stations <- st_read(
+  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/03_stations_training.gpkg",
+  quiet = TRUE
+)
+
+# Ensure CRS matches
+if (st_crs(stations)$wkt != crs(r_stack)) {
+  stations <- st_transform(stations, crs(r_stack))
+}
+
+# extract static predictors
+stations_v <- vect(stations)
+
+pred_vals <- terra::extract(
+  r_stack,
+  stations_v
+)
+
+# bind predictors back to sf object
+stations_pred <- cbind(
+  stations,
+  pred_vals[, -1]  # remove terra ID column
+)
+
+# write output
+st_write(
+  stations_pred,
+  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/04_training_static.gpkg",
+  delete_dsn = TRUE
+)
+
 # ---- quality checks ----
 # check one or two predictors
-summary(stations_pred$dtm) # if there is NAs here, one of the sensors is not in the raster, probably not in the gpkg
+summary(stations_pred$elev_10) # if there is NAs here, one of the sensors is not in the raster, probably not in the gpkg
 summary(stations_pred$slope)
 
 # NA rates per predictor (should be 0)
@@ -265,7 +322,20 @@ na_frac <- sort(
   colMeans(is.na(st_drop_geometry(stations_pred))),
   decreasing = TRUE
 )
-na_frac
+
+# diagnostic in case something is NA
+# stations_pred %>%
+#  filter(is.na(chm_max_10m)) %>%
+#  count(sensor_id, sort = TRUE)
+
+stations_pred_clean <- stations_pred %>%
+  filter(complete.cases(st_drop_geometry(.)))
+
+st_write(
+  stations_pred_clean,
+  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/04_training_static.gpkg",
+  delete_dsn = TRUE
+)
 
 ##############################################################
 # ----- + ERA5 HANDLING OF DYNAMIC PREDICTORS  ----- 
@@ -273,12 +343,13 @@ na_frac
 # externalized to a separate pyscript because era5 handling in R is a nightmare
 # we just load in the parquet file and cnvert it, double check 
 # that everything aligns and then we join it
-era5_phys <- read_parquet("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/05_era5_variables.parquet")
+library(arrow)
+era5_phys <- read_parquet("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/05_era5_variables.parquet")
 df <- as.data.frame(era5_phys)
-stations_pred <- st_read("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/04_training_static.gpkg", quiet = TRUE)
+stations_pred <- st_read("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/04_training_static.gpkg", quiet = TRUE)
 
-str(era5_phys)
-str(stations_pred)
+stations_pred <- stations_pred %>%
+  filter(time >= min(era5_phys$time) , time <= max(era5_phys$time))
 
 # JOIN WUHUUU
 train_joined <- stations_pred %>%
@@ -287,12 +358,19 @@ train_joined <- stations_pred %>%
     by = c("sensor_id", "time")
   )
 str(train_joined)
-train_joined <- train_joined %>% st_drop_geometry()
+
+#train_joined <- train_joined %>% st_drop_geometry()
 
 # row count shold not change
 nrow(stations_pred)
 nrow(train_joined)
 
+##### CONTINUE HERE AFTER BARB
+##### CONTINUE HERE AFTER BARB
+##### CONTINUE HERE AFTER BARB
+##### CONTINUE HERE AFTER BARB
+##### CONTINUE HERE AFTER BARB
+# why the fuck are there NAs, fix after barb
 # check for missing ERA5 after join
 train_joined %>%
   summarise(across(c(t2m, ssrd, u10, v10, tp, wind_s), ~mean(is.na(.))))
@@ -310,7 +388,9 @@ train <- train_joined %>%
     doy_cos = cos(2 * pi * doy / 365)
     ) %>%
   select(-hour, -doy)
-str(train)
-# str(train)
-saveRDS(train, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/06_final_train.rds")
 
+train <- train %>%
+  select(-n_als)
+
+# str(train)
+saveRDS(train, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/06_train_data.rds")
