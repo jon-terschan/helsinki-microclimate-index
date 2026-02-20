@@ -358,17 +358,13 @@ train_joined <- stations_pred %>%
     by = c("sensor_id", "time")
   )
 str(train_joined)
-
+nrow(train_joined)
 #train_joined <- train_joined %>% st_drop_geometry()
 
 # row count shold not change
 nrow(stations_pred)
 nrow(train_joined)
 
-##### CONTINUE HERE AFTER BARB
-##### CONTINUE HERE AFTER BARB
-##### CONTINUE HERE AFTER BARB
-##### CONTINUE HERE AFTER BARB
 ##### CONTINUE HERE AFTER BARB
 # why the fuck are there NAs, fix after barb
 # check for missing ERA5 after join
@@ -390,7 +386,29 @@ train <- train_joined %>%
   select(-hour, -doy)
 
 train <- train %>%
-  select(-n_als)
+  select(-n_als, OOS)
+
+glimpse(train)
 
 # str(train)
 saveRDS(train, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/06_train_data.rds")
+
+# export summary statistics about train data
+library(dplyr)
+sensor_static <- train_joined %>%
+  st_drop_geometry() %>%
+  group_by(sensor_id) %>%
+  summarise(
+    n_rows = n(),
+    n_temp_obs = sum(!is.na(temp)),
+    CC = first(CC),
+    UCC = first(uCC),
+    PAI = first(PAI),
+    elev_10 = first(elev_10),
+    slope = first(slope),
+    bld_fr_10 = first(bldg_fr_10),
+    .groups = "drop"
+  )
+write.csv(sensor_static,
+          "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/train_data_summary.csv",
+          row.names = FALSE)

@@ -7,7 +7,7 @@ import pyarrow
 
 # ----------------- paths -----------------
 era5_path = r"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/11.25/ERA/combined/ERA_SUMMER_24_25_HEL.netcdf"
-gpkg_path  = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\train_data\04_training_static.gpkg"
+gpkg_path  = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\modeling\01_traindataprep\04_training_static.gpkg"
 
 # ============================================================
 # 1) LOAD ERA5 DATASET AND STATION LOCATIONS
@@ -119,6 +119,7 @@ era5_phys["t2m"] = era5_phys["t2m"] - 273.15
 
 # SSRD: J/m² to W/m² (hourly)
 era5_phys = era5_phys.sort_values(["sensor_id", "time"])
+
 era5_phys["ssrd"] = (
     era5_phys
     .groupby("sensor_id")["ssrd"]
@@ -137,6 +138,33 @@ era5_phys["tp"] = (
     * 1000.0
 )
 
+
+### EXTRA LAGGED PREDICTORS, REMOVE IF THEY DONT INCREASE PERFORMANCE
+# t2m lags
+era5_phys["t2m_lag1"] = era5_phys.groupby("sensor_id")["t2m"].shift(1)
+era5_phys["t2m_lag3"] = era5_phys.groupby("sensor_id")["t2m"].shift(3)
+era5_phys["t2m_lag6"] = era5_phys.groupby("sensor_id")["t2m"].shift(6)
+
+era5_phys["ssrd_roll3"] = (
+    era5_phys
+    .groupby("sensor_id")["ssrd"]
+    .transform(lambda x: x.rolling(3, min_periods=1).sum())
+)
+
+era5_phys["ssrd_roll6"] = (
+    era5_phys
+    .groupby("sensor_id")["ssrd"]
+    .transform(lambda x: x.rolling(6, min_periods=1).sum())
+)
+
+era5_phys["t2m_lag24"] = (
+    era5_phys
+    .groupby("sensor_id")["t2m"]
+    .shift(24)
+)
+
+era5_phys.head()
+
 # ============================================================
 #  SOME POST CALCULATION CHECKS
 # ============================================================
@@ -149,11 +177,11 @@ era5_phys.isna().mean().sort_values(ascending=False) # missingness rates
 #  EXPORT FOR REUSE IN R
 # ============================================================
 era5_phys["time"] = era5_phys["time"].dt.tz_localize("UTC")
-era5_phys
 
-era5_phys.to_parquet(r"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/train_data/05_era5_variables.parquet", engine="fastparquet", index=False)
+era5_phys.to_parquet(r"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/05_era5_variables.parquet", engine="fastparquet", index=False)
 
-# ============================================================
+# ======================================
+# ======================
 # 9) VISUAL DIAGNOSTIC: GRID TILE ↔ STATION MAPPING
 # ============================================================
 # unique integer per ERA5 grid cell
@@ -198,7 +226,7 @@ ax.set_ylabel("Latitude")
 ax.set_title("ERA5 grid cell attribution to stations")
 
 plt.tight_layout()
-plt.savefig("era5_tile_station_mapping.png", dpi=300)
+plt.savefig("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/era5_tile_station_mapping.png", dpi=300)
 plt.close()
 
 # how many stations per era5_tile

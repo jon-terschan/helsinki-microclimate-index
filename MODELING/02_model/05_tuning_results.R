@@ -7,9 +7,9 @@
 library(dplyr)
 library(purrr)
 
-# input params
-results_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/tuning_results/"
-out_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/tuning_results/tuning_summary.rds"
+# input params\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\modeling\02_tuningresults
+results_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/"
+out_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/tuning_summary_1.rds"
 param_grid <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/tuning_grid_40.rds")
 
 # list result files
@@ -18,6 +18,7 @@ files <- list.files(
   pattern = "^results_param_[0-9]+\\.rds$",
   full.names = TRUE
 )
+
 # read all
 all_results <- map_dfr(files, readRDS)
 
