@@ -28,7 +28,4 @@ As the name implies, this contains script to predict using the final model. Ther
 
 * 10 m building fraction is a nice looking raster layer but in terms of modeling its probably noise that can be cut, because there is no variance of it represented in the training data. 50 m building fraction is the one we should keep.
 
-* Lagged predictors are nice for forecasting, but if they dont increase the model by a lot, I will cut them.
-
-
-## lagged predictors
+* Lagged ERA5 predictors are nice for forecasting, but if they dont increase the model by a lot, I will cut them. Including lagged predictors provided negligible improvement in predictive performance (<0.03 °C reduction in RMSE), I think its thus best to drop them and retain a more parsimonious model structure for reasons of operational ease.

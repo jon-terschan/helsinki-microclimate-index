@@ -205,7 +205,8 @@ saveRDS(fold_def, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODEL
 # -------------------------------
 # ADD ALS PREDICTORS LATER
 library(data.table)
-
+train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
+glimpse(train)
 # check the full number of predictors
 # to test mtry > n predictors
 predictors <- train %>%
@@ -213,12 +214,20 @@ predictors <- train %>%
          -sensor_channel,
          -time,
          -temp,
-         -geom,
+         #-geom,
          -spatial_fold,
          -time_fold,
          -OOS,
          -x,
-         -y)
+         -y,
+         -t2m_lag1, # adds 0.02 RMSE
+         -t2m_lag3, # adds 0.02 RMSE
+         -t2m_lag6, # adds 0.02 RMSE
+         -t2m_lag24, # adds 0.02 RMSE
+         -ssrd_roll3, # adds 0.02 RMSE
+         -ssrd_roll6, # adds 0.02 RMSE
+         -bldg_fr_10 # no signal in the train data)
+         )
 
 pred <- c(names(predictors))
 p <- length(predictors)
@@ -241,10 +250,3 @@ print(param_grid)
 
 # save
 saveRDS(param_grid, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/tuning_grid_40.rds", compress = "xz")
-
-
-
-cor_matrix <- cor(train_model %>%
-                    select(-temp),
-                  use = "pairwise.complete.obs")
-cor_matrix

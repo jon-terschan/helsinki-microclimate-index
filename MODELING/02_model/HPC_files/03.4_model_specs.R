@@ -6,7 +6,7 @@
 response <- "temp"
 
 train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
-
+glimpse(train)
 # exclude the things that are no predictors here
 predictors <- train %>%
   select(-sensor_id,
@@ -17,7 +17,15 @@ predictors <- train %>%
          -time_fold,
          -x,
          -OOS,
-         -y)
+         -y,
+         -t2m_lag1, # adds 0.02 RMSE
+         -t2m_lag3, # adds 0.02 RMSE
+         -t2m_lag6, # adds 0.02 RMSE
+         -t2m_lag24, # adds 0.02 RMSE
+         -ssrd_roll3, # adds 0.02 RMSE
+         -ssrd_roll6, # adds 0.02 RMSE
+         -bldg_fr_10 # no signal in the train data)
+         ) 
 
 predictors <- c(names(predictors))
 predictors
