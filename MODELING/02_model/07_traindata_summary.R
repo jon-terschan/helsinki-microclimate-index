@@ -3,6 +3,7 @@
 # limitations and target domains of the final model
 
 library(dplyr)
+library(sf)
 
 # load train data
 train_joined <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/01_traindataprep/06_train_data.rds")
@@ -28,6 +29,7 @@ sensor_static <- train_joined %>%
     tree_fr_10 = first(tree_fr_10),
     rock_fr_10 = first(rock_fr_10),
     oce_dis = first(oce_dis),
+    ruggedness = first(ruggedness),
     .groups = "drop"
   )
 

@@ -9,7 +9,9 @@ This repository contains the code for the (pre-)processing of predictors and tun
 ## Performance
 On average, HELMI's temperature predictions differ from observed values by about 0.6 °C (MAE: 0.63 +- 0.14 °C). Occasionally, larger errors will occur, and when taken into account, the typical overall prediction error to be expected is about 1 °C (RMSE: ~0.97 +- 0.23 °C). No systematic over- or underestimation was observed.
 
-Performance was assessed by tuning across 25 spatiotemporal cross-validation folds. In addition, the production model was externally validated over independent data from Kumpula Botanical garden.
+These metrics are from the tuning phase in which we trained and predicted over 25 spatiotemporal cross-validation folds using 40 different hyperparameter combinations. For production, the number of trees in the model was increased from 500 to 2000.
+
+We also externally validated the production model over independent data from Kumpula Botanical garden.
 
 ## Limitations
 HELMI's training data is made up of sensor-level observations located primarily in forest-dominated environments with moderate terrain variation and limited built infrastructure. Overall, its training dataset is weighted toward closed-canopy forest systems, and highly anthropogenic environments are not well-represented. Thus, Helmi is expected to perform best in:

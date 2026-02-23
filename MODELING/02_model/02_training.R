@@ -5,6 +5,7 @@
 # can be run locally, but the prerequisites must be downloaded from HPC first
 library(ranger)
 library(dplyr)
+set.seed(42)
 
 # -------------------------------
 # PARAMS
@@ -14,11 +15,13 @@ source("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_mode
 # train data CHECK before running
 train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
 # extract best params from aggregate table
-tuning_summary <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/tuning_results/tuning_summary.rds")
+tuning_summary <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/tuning_summary_1.rds")
+str(tuning_summary)
+
 best_params <- tuning_summary %>%
   arrange(mean_rmse) %>%
   slice(1)
-names(best_params)
+str(best_params)
 
 # -------------------------------
 # MODEL FIT
@@ -37,5 +40,8 @@ rf_final <- ranger(
 )
 
 # save final model
-saveRDS(rf_final, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/03_model/01_helmi_2000_LAGGED.rds")
-# glimpse(rf_final)
+saveRDS(rf_final, 
+"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/03_models/helmi_2000_v1.3_2.rds",
+compress = "xz")
+
+glimpse(rf_final)

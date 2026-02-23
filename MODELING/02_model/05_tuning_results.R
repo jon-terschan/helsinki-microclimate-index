@@ -47,3 +47,5 @@ summary_df
 # export so it can be used to tune the final model
 saveRDS(summary_df, out_file)
 print(head(summary_df, 10)) # check output CURIOUS
+str(summary_df)
+
