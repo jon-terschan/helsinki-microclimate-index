@@ -41,7 +41,7 @@ rf_final <- ranger(
 
 # save final model
 saveRDS(rf_final, 
-"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/03_models/helmi_2000_v1.3_2.rds",
+"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/03_models/helmi_2000_v1.4_noSMC.rds",
 compress = "xz")
 
 glimpse(rf_final)

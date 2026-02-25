@@ -18,6 +18,7 @@ predictors <- train %>%
          -x,
          -OOS,
          -y,
+         -SMC,
          -t2m_lag1, # adds 0.02 RMSE
          -t2m_lag3, # adds 0.02 RMSE
          -t2m_lag6, # adds 0.02 RMSE
@@ -38,7 +39,7 @@ formula_rf <- as.formula(
 # RF fixed settings
 # -------------------------------
 rf_fixed <- list(
-  num.trees = 2000,                 # higher for final model
+  num.trees = 1000,                 # higher for final model
   importance = "none",              # consistent with tuning
   #respect.unordered.factors = "order", # double check later
   seed = 42
