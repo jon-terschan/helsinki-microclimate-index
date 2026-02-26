@@ -7,10 +7,10 @@ import xarray as xr
 
 # import output
 path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\ERA\NEW\ERA_SUMMER_24_05_02.netcdf"
-out_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\data\11.25\ERA\NEW\era5_centers_newest.gpkg"
+out_path = r"\\ad.helsinki.fi\\home\\t\\terschan\\Desktop\\paper1\\scripts\\DATA\\era5\era5_centers5.gpkg"
 
-era = xr.open_dataset(path)
-
+#era = xr.open_dataset(path)
+era = xr.open_dataset(era_target)
 # extract lat/long
 lats = era.latitude.values
 lons = era.longitude.values
@@ -34,5 +34,6 @@ era_centers = gpd.GeoDataFrame(
 era_centers.to_file(
     out_path,
     layer="era5_centers",
-    driver="GPKG"
+    driver="GPKG",
+    overwrite=True
 )

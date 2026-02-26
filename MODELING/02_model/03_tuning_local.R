@@ -218,6 +218,7 @@ predictors <- train %>%
          -spatial_fold,
          -time_fold,
          -OOS,
+         -SMS,
          -x,
          -y,
          -t2m_lag1, # adds 0.02 RMSE
