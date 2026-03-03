@@ -15,14 +15,14 @@ source("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_mode
 # train data CHECK before running
 train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
 # extract best params from aggregate table
-tuning_summary <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/tuning_summary_1.rds")
+tuning_summary <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/tuning_summary.rds")
 str(tuning_summary)
 
 best_params <- tuning_summary %>%
   arrange(mean_rmse) %>%
   slice(1)
 str(best_params)
-
+str(train)
 # -------------------------------
 # MODEL FIT
 # -------------------------------
@@ -39,9 +39,10 @@ rf_final <- ranger(
   oob.error = FALSE # not needed here
 )
 
+# E:\ALS\MODEL
 # save final model
 saveRDS(rf_final, 
-"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/03_models/helmi_2000_v1.4_noSMC.rds",
+"E://ALS/MODEL/helmi_2000_v1.4_test.rds",
 compress = "xz")
 
 glimpse(rf_final)

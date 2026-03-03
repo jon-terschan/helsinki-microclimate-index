@@ -2,12 +2,12 @@
 # 03.4_model_spec.R
 # Fixed model definition
 # ===============================
-
 response <- "temp"
-
+# local
 train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
+# HPC: train <- readRDS("/scratch/project_2001208/Jonathan/model/data/processed/ML/fold_train.rds")
 glimpse(train)
-# exclude the things that are no predictors here
+# exclude non predictor columns
 predictors <- train %>%
   select(-sensor_id,
          -sensor_channel,
@@ -17,15 +17,16 @@ predictors <- train %>%
          -time_fold,
          -x,
          -OOS,
+         -CCl, # for the time being, its currently a token value
          -y,
-         -SMC,
-         -t2m_lag1, # adds 0.02 RMSE
-         -t2m_lag3, # adds 0.02 RMSE
-         -t2m_lag6, # adds 0.02 RMSE
-         -t2m_lag24, # adds 0.02 RMSE
-         -ssrd_roll3, # adds 0.02 RMSE
-         -ssrd_roll6, # adds 0.02 RMSE
-         -bldg_fr_10 # no signal in the train data)
+         -SMC
+         #-t2m_lag1, # adds 0.02 RMSE
+         #-t2m_lag3, # adds 0.02 RMSE
+         #-t2m_lag6, # adds 0.02 RMSE
+         #-t2m_lag24, # adds 0.02 RMSE
+         #-ssrd_roll3, # adds 0.02 RMSE
+         #-ssrd_roll6, # adds 0.02 RMSE
+         #-bldg_fr_10 # no signal in the train data)
          ) 
 
 predictors <- c(names(predictors))
@@ -39,7 +40,7 @@ formula_rf <- as.formula(
 # RF fixed settings
 # -------------------------------
 rf_fixed <- list(
-  num.trees = 1000,                 # higher for final model
+  num.trees = 1500,                 # higher for final model
   importance = "none",              # consistent with tuning
   #respect.unordered.factors = "order", # double check later
   seed = 42

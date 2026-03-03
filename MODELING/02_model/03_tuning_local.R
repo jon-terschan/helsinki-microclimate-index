@@ -1,11 +1,10 @@
 # -------------------------------
 # LOCAL PREP FOR TUNING
 # -------------------------------
-# this mainly consists of creating the spatio temporal folds for tuning
-# and the hyperparameter tuning grid which will serve as indexer
+# creating the spatiotemporal folds
+# and the hyperparameter tuning grid which will serve as index on HPC
 # dont run this without carefully reviewing the appripriateness of each step
 # can be run locally as its just prep for HPC tuning 
-
 library(sf)
 library(dplyr)
 library(blockCV)
@@ -205,6 +204,7 @@ saveRDS(fold_def, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODEL
 # -------------------------------
 # ADD ALS PREDICTORS LATER
 library(data.table)
+
 train <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/fold_train.rds")
 glimpse(train)
 # check the full number of predictors
@@ -217,17 +217,18 @@ predictors <- train %>%
          #-geom,
          -spatial_fold,
          -time_fold,
+         -CCl, # for the time being, it is currently a filler value
          -OOS,
-         -SMS,
+         -SMC,
          -x,
-         -y,
-         -t2m_lag1, # adds 0.02 RMSE
-         -t2m_lag3, # adds 0.02 RMSE
-         -t2m_lag6, # adds 0.02 RMSE
-         -t2m_lag24, # adds 0.02 RMSE
-         -ssrd_roll3, # adds 0.02 RMSE
-         -ssrd_roll6, # adds 0.02 RMSE
-         -bldg_fr_10 # no signal in the train data)
+         -y
+         #-t2m_lag1, # adds 0.02 RMSE
+         #-t2m_lag3, # adds 0.02 RMSE
+         #-t2m_lag6, # adds 0.02 RMSE
+         #-t2m_lag24, # adds 0.02 RMSE
+         #-ssrd_roll3, # adds 0.02 RMSE
+         #-ssrd_roll6, # adds 0.02 RMSE
+         #-bldg_fr_10 # no signal in the train data)
          )
 
 pred <- c(names(predictors))

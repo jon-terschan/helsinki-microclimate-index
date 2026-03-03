@@ -366,11 +366,16 @@ nrow(stations_pred)
 nrow(train_joined)
 
 ##### CONTINUE HERE AFTER BARB
-# why the fuck are there NAs, fix after barb
+# why the fuck are there NAs
+# anyways, here is the point where we check for NAs and things gone wrong.
 # check for missing ERA5 after join
 train_joined %>%
   summarise(across(c(t2m, ssrd, u10, v10, tp, wind_s), ~mean(is.na(.))))
 
+# drop nas
+train_joined <- train_joined %>%
+  filter(if_all(everything(), ~ !is.na(.)))
+nrow(train_joined)
 ##############################################################
 # ----- + FURTHER ENCODING AND EXPORT ----- 
 ##############################################################
