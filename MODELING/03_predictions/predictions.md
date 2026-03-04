@@ -1,4 +1,3 @@
-
 # Predicting
 
 1. First, we generate deterministic files "needed" for the HPC implementation in 05_deter_filegen.R. We enshrine the feature order in the model in a txt file called feature_order.txt to make sure that the merged predictor stack (static + dynamic vars)
