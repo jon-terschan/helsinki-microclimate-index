@@ -66,6 +66,11 @@ era_target = os.path.join(target_dir, filename)
 client.retrieve(dataset_era, era_request, era_target) # execute API request
 
 # ERA5-LAND - MULTI - MONTH/YEAR DOWNLOAD
+import cdsapi
+import os # for filepath concat
+
+# initialize API 
+client = cdsapi.Client()
 target_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5"
 dataset_era = "reanalysis-era5-land"
 years = ["2024", "2025"]

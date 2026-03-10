@@ -11,7 +11,7 @@ library(purrr)
 
 # input
 results_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/"
-out_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/tuning_summary_1.rds"
+out_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/modeling/02_tuningresults/tuning_summary.rds"
 param_grid <- readRDS("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/MODELING/02_model/HPC_files/tuning_grid_40.rds")
 
 # list result files

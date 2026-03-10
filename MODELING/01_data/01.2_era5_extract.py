@@ -6,13 +6,17 @@ import matplotlib.pyplot as plt
 import pyarrow
 
 # ----------------- paths -----------------
-era5_path = r"//ad.helsinki.fi/home/t/terschan/Desktop/paper1/data/11.25/ERA/combined/ERA_SUMMER_24_25_HEL.netcdf"
+era5_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\era5_combined\ERA5l_SUMMER_24_25_HEL.netcdf"
 gpkg_path  = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\modeling\01_traindataprep\04_training_static.gpkg"
 
 # ============================================================
 # 1) LOAD ERA5 DATASET AND STATION LOCATIONS
 # ============================================================
 ds = xr.open_dataset(era5_path) # load era5 as xaray
+# check attributes to check if preprocessing has been done
+#print(ds["t2m"].attrs)
+#print(ds["ssrd"].attrs)
+#print(ds["tp"].attrs)
 
 stations = gpd.read_file(gpkg_path)[["sensor_id", "geometry"]].drop_duplicates("sensor_id").reset_index(drop=True) # load localized training df
 stations = stations.to_crs("EPSG:4326") # convert to lat/lon
@@ -108,62 +112,34 @@ era5_stations = era5_stations.drop(
 
 era5_stations = era5_stations.sort_values(["sensor_id", "time"]).reset_index(drop=True)
 
-# ============================================================
-# 7) PHYSICAL UNIT CONVERSIONS
-# ============================================================
-# convert era5 vars to physiccally meaningful units
+# physical unit conversion no longer necessary
+# because they are done in the concat phase
+# this is just an artifact
 era5_phys = era5_stations.copy()
 
-# temperature from kelvin to celsius
-era5_phys["t2m"] = era5_phys["t2m"] - 273.15
+### EXTRA LAGGED PREDICTORS (currently not used)
 
-# SSRD: J/m² to W/m² (hourly)
-era5_phys = era5_phys.sort_values(["sensor_id", "time"])
+# era5_phys["t2m_lag1"] = era5_phys.groupby("sensor_id")["t2m"].shift(1)
+# era5_phys["t2m_lag3"] = era5_phys.groupby("sensor_id")["t2m"].shift(3)
+# era5_phys["t2m_lag6"] = era5_phys.groupby("sensor_id")["t2m"].shift(6)
 
-era5_phys["ssrd"] = (
-    era5_phys
-    .groupby("sensor_id")["ssrd"]
-    .diff()
-    .clip(lower=0)
-    .fillna(0)
-    / 3600.0
-)
-# total precipitation (review later)
-era5_phys["tp"] = (
-    era5_phys
-    .groupby("sensor_id")["tp"]
-    .diff()
-    .clip(lower=0)
-    .fillna(0)
-    * 1000.0
-)
+# era5_phys["ssrd_roll3"] = (
+#     era5_phys
+#     .groupby("sensor_id")["ssrd"]
+#     .transform(lambda x: x.rolling(3, min_periods=1).sum())
+# )
 
+# era5_phys["ssrd_roll6"] = (
+#     era5_phys
+#     .groupby("sensor_id")["ssrd"]
+#     .transform(lambda x: x.rolling(6, min_periods=1).sum())
+# )
 
-### EXTRA LAGGED PREDICTORS, REMOVE IF THEY DONT INCREASE PERFORMANCE
-# t2m lags
-era5_phys["t2m_lag1"] = era5_phys.groupby("sensor_id")["t2m"].shift(1)
-era5_phys["t2m_lag3"] = era5_phys.groupby("sensor_id")["t2m"].shift(3)
-era5_phys["t2m_lag6"] = era5_phys.groupby("sensor_id")["t2m"].shift(6)
-
-era5_phys["ssrd_roll3"] = (
-    era5_phys
-    .groupby("sensor_id")["ssrd"]
-    .transform(lambda x: x.rolling(3, min_periods=1).sum())
-)
-
-era5_phys["ssrd_roll6"] = (
-    era5_phys
-    .groupby("sensor_id")["ssrd"]
-    .transform(lambda x: x.rolling(6, min_periods=1).sum())
-)
-
-era5_phys["t2m_lag24"] = (
-    era5_phys
-    .groupby("sensor_id")["t2m"]
-    .shift(24)
-)
-
-era5_phys.head()
+# era5_phys["t2m_lag24"] = (
+#     era5_phys
+#     .groupby("sensor_id")["t2m"]
+#     .shift(24)
+# )
 
 # ============================================================
 #  SOME POST CALCULATION CHECKS
