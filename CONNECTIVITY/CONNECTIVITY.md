@@ -9,6 +9,8 @@
 - I download ERA5-Land daily Tmax for May-September 1961-1990 and establish 1 90th percentile for Helsinki.
 - Next, I check suspect years until we find our H1, H2, H3. I will collect suspect years from news and press releases, as it will increase relevance.
 
+- DONE, see METEOBASELINE
+
 ## Step 2: Predict heatwave + baseline
 
 - Predict H1, H2, H3 max temperature hour. These should no more than a few predictions per event. Easy!
