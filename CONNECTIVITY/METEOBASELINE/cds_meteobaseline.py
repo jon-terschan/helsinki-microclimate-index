@@ -8,11 +8,11 @@ client = cdsapi.Client()
 
 ## TMAX -DAILY MAX TEMP ####
 ############################
-target_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\recent_tmax"
+target_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\baseline\1990-2020"
 
 dataset = "derived-era5-land-daily-statistics"
-years = [str(y) for y in range(2010, 2025)]
-months = ["06", "07", "08"]
+years = [str(y) for y in range(2015, 2021)]
+months = ["05", "06", "07", "08", "09"]
 
 for year in years:
     for month in months:
