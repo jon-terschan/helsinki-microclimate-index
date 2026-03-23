@@ -12,6 +12,7 @@ On average, HELMI's temperature predictions differ from observed values by about
 These metrics are from the tuning phase in which we trained and predicted over 25 spatiotemporal cross-validation folds using 40 different hyperparameter combinations. For production, the number of trees in the model was increased from 500 to 2000.
 
 We also externally validated the production model over independent data from Kumpula Botanical garden.
+![Validation results](figures/validation_summary_dark.png)
 
 ## Limitations
 HELMI's training data is made up of sensor-level observations located primarily in forest-dominated environments with moderate terrain variation and limited built infrastructure. Overall, its training dataset is weighted toward closed-canopy forest systems, and highly anthropogenic environments are not well-represented. Thus, Helmi is expected to perform best in:
