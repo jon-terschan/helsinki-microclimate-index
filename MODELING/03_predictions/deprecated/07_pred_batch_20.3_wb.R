@@ -1,12 +1,12 @@
 #################################
 ### HELMI PREDICTION WRAPPER ###
-### SINGLE-THREADED VERSION   ###
 #################################
 
 library(terra)
 library(ranger)
 library(ncdf4)
 library(lubridate)
+library(parallel)
 
 log_step <- function(msg) {
   cat(sprintf("[%s] %s\n", format(Sys.time(), "%H:%M:%S"), msg))
@@ -26,16 +26,22 @@ job_id   <- Sys.getenv("SLURM_JOB_ID")
 
 log_step(sprintf("Array task %d started (job %s)", array_id, job_id))
 
+#########################################################
+# Randomized start jitter (reduce filesystem stampede)
+#########################################################
+
 set.seed(array_id + as.integer(Sys.getpid()))
 Sys.sleep(runif(1,0,90))
-Sys.sleep((array_id %% 5) * 30)
+
+stagger_secs <- (array_id %% 5) * 30
+Sys.sleep(stagger_secs)
 
 #########################################################
 # Temporary directory
 #########################################################
 
 tmp_dir <- file.path(
-  "/scratch/project_2001208/Jonathan/model/tmp",
+  "/scratch/project_2001208/Jonathan/tmp",
   paste0("job_", job_id, "_", array_id)
 )
 
@@ -49,22 +55,11 @@ terraOptions(
   tempdir  = tmp_dir
 )
 
-job_success <- FALSE
-
-on.exit({
-  if (job_success) {
-    log_step("Job completed successfully, removing tmp directory")
-    unlink(tmp_dir, recursive = TRUE, force = TRUE)
-  } else {
-    log_step("Job failed, tmp directory retained")
-  }
-}, add = TRUE)
-
 #########################################################
 # Prediction schedule
 #########################################################
 
-schedule <- readRDS("/scratch/project_2001208/Jonathan/model/data/processed/ML/prediction_schedule_H3.rds")
+schedule <- readRDS("/scratch/project_2001208/Jonathan/model/data/processed/ML/prediction_schedule_H1.rds")
 target_time <- schedule[array_id]
 
 log_step(sprintf("Target time: %s", target_time))
@@ -76,11 +71,10 @@ log_step(sprintf("Target time: %s", target_time))
 model_path <- "/scratch/project_2001208/Jonathan/model/models/rf/helmi_2000_v1.4_test.rds"
 
 static_stack <- rast("/scratch/project_2001208/Jonathan/model/data/processed/rasters_static/pred_stack_10m.tif")
-pred_mask    <- rast("/scratch/project_2001208/Jonathan/model/data/processed/rasters_static/prediction_mask.tif")
+
+pred_mask <- rast("/scratch/project_2001208/Jonathan/model/data/processed/rasters_static/prediction_mask.tif")
 
 feature_order <- readLines("/scratch/project_2001208/Jonathan/model/data/processed/ML/feature_order.txt")
-
-rf_model <- readRDS(model_path)
 
 log_step("Static inputs loaded")
 
@@ -88,7 +82,7 @@ log_step("Static inputs loaded")
 # ERA5 NetCDF extraction
 #########################################################
 
-nc_path <- "/scratch/project_2001208/Jonathan/model/data/processed/rasters_dynamic/ERA5L_H3_pre.nc" 
+nc_path <- "/scratch/project_2001208/Jonathan/model/data/processed/rasters_dynamic/ERA5L_H1_pre.nc"
 
 nc <- nc_open(nc_path)
 
@@ -217,7 +211,7 @@ names(r_doy_sin)  <- "doy_sin"
 names(r_doy_cos)  <- "doy_cos"
 
 #########################################################
-# Build full predictor stack (disk-backed)
+# Build full predictor stack
 #########################################################
 
 full_stack <- c(
@@ -241,11 +235,8 @@ writeRaster(
   full_stack_path,
   overwrite=TRUE,
   datatype="FLT4S",
-  gdal=c("COMPRESS=NONE")
+  gdal=c("COMPRESS=DEFLATE","PREDICTOR=2","ZLEVEL=6")
 )
-
-# reload as disk-backed raster
-full_stack <- rast(full_stack_path)
 
 #########################################################
 # Tile definition
@@ -280,36 +271,157 @@ k <- k+1
 log_step("Tiling ready")
 
 #########################################################
-# Sequential prediction
+# Worker prediction function
 #########################################################
 
 predict_tile <- function(tile){
 
-  tile_ext <- ext(
-    xFromCol(full_stack,tile$col_from)-res(full_stack)[1]/2,
-    xFromCol(full_stack,tile$col_to)+res(full_stack)[1]/2,
-    yFromRow(full_stack,tile$row_to)-res(full_stack)[2]/2,
-    yFromRow(full_stack,tile$row_from)+res(full_stack)[2]/2
-  )
+if(!exists("pred_stack")) stop("Predictor stack not initialized")
+if(!exists("rf_model")) stop("Model not initialized")
 
-  full_tile <- crop(full_stack,tile_ext)
+tile_ext <- ext(
+xFromCol(pred_stack,tile$col_from)-res(pred_stack)[1]/2,
+xFromCol(pred_stack,tile$col_to)+res(pred_stack)[1]/2,
+yFromRow(pred_stack,tile$row_to)-res(pred_stack)[2]/2,
+yFromRow(pred_stack,tile$row_from)+res(pred_stack)[2]/2
+)
 
-  p <- predict(full_tile,rf_model)
+full_tile <- crop(pred_stack,tile_ext)
 
-  values(p) <- round(values(p)*100)
+p <- predict(full_tile,rf_model)
 
-  writeRaster(
-    p,
-    tile$path,
-    overwrite=TRUE,
-    datatype="INT2S",
-    gdal=c("COMPRESS=DEFLATE","PREDICTOR=2","ZLEVEL=6")
-  )
+values(p) <- round(values(p)*100)
 
-  tile$path
+writeRaster(
+p,
+tile$path,
+overwrite=TRUE,
+datatype="INT2S",
+gdal=c("COMPRESS=DEFLATE","PREDICTOR=2","ZLEVEL=6")
+)
+
+tile$path
 }
 
-tile_files <- lapply(tiles,predict_tile)
+#########################################################
+# Worker setup
+#########################################################
+
+worker_libs <- .libPaths()
+
+worker_tmp_1 <- file.path(tmp_dir,"worker_1")
+worker_tmp_2 <- file.path(tmp_dir,"worker_2")
+
+dir.create(worker_tmp_1)
+dir.create(worker_tmp_2)
+
+worker_tmps <- c(worker_tmp_1,worker_tmp_2)
+
+#########################################################
+# Node-local stack copy (critical for Lustre stability)
+#########################################################
+
+node_tmp <- Sys.getenv("TMPDIR")
+if(node_tmp=="") node_tmp <- Sys.getenv("SNIC_TMP")
+if(node_tmp=="") node_tmp <- tmp_dir
+
+local_stack_dir <- file.path(node_tmp,paste0("stack_",job_id))
+dir.create(local_stack_dir,showWarnings=FALSE)
+
+local_stack_copy <- file.path(local_stack_dir,"stack.tif")
+
+copy_with_retry <- function(src,dst,tries=3,pause=5){
+
+for(i in seq_len(tries)){
+
+ok <- file.copy(src,dst,overwrite=TRUE)
+
+if(ok){
+
+s <- file.info(src)$size
+d <- file.info(dst)$size
+
+if(!is.na(s) && !is.na(d) && s==d) return(TRUE)
+
+if(file.exists(dst)) unlink(dst)
+
+}
+
+Sys.sleep(pause*i)
+
+}
+
+stop("Failed to copy stack locally")
+}
+
+if(!file.exists(local_stack_copy)){
+copy_with_retry(full_stack_path,local_stack_copy)
+}
+
+#########################################################
+# Start cluster
+#########################################################
+
+cl <- makeCluster(2,type="PSOCK")
+
+clusterExport(
+cl,
+c("tiles","predict_tile","model_path"),
+envir=environment()
+)
+
+clusterApply(
+cl,
+1:2,
+function(id,libs,tmps,stack_path,model_path){
+
+.libPaths(libs)
+
+library(terra)
+library(ranger)
+
+terraOptions(
+memfrac=0.05,
+memmax=2,
+todisk=TRUE,
+progress=0,
+tempdir=tmps[id]
+)
+
+retry_rast <- function(path,tries=3,pause=2){
+
+for(i in seq_len(tries)){
+
+r <- try(terra::rast(path),silent=TRUE)
+
+if(!inherits(r,"try-error")) return(r)
+
+Sys.sleep(pause*i)
+
+}
+
+stop("Failed to open raster")
+
+}
+
+pred_stack <<- retry_rast(stack_path)
+rf_model   <<- readRDS(model_path)
+
+NULL
+
+},
+libs=worker_libs,
+tmps=worker_tmps,
+stack_path=local_stack_copy,
+model_path=model_path
+)
+
+log_step("Workers ready")
+
+tile_files <- parLapplyLB(cl,tiles,predict_tile)
+
+stopCluster(cl)
+
 tile_files <- unlist(tile_files)
 
 log_step("Tiles predicted")
@@ -365,15 +477,3 @@ gdal=c("COMPRESS=DEFLATE","PREDICTOR=2","ZLEVEL=6")
 )
 
 log_step("Final output written")
-job_success <- TRUE
-
-#########################################################
-# Cleanup
-#########################################################
-
-if (job_success) {
-  log_step("Job completed successfully, removing tmp directory")
-  unlink(tmp_dir, recursive = TRUE, force = TRUE)
-} else {
-  log_step("Job did not complete successfully, tmp directory retained for debugging")
-}
