@@ -5,9 +5,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 # paths
-baseline_dir = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\baseline_tmax")
+baseline_dir = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\baseline\1990-2020")
 output_dir   = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\thresholds")
-output_file  = output_dir / "CTX90_thresholds.nc"
+output_file  = output_dir / "CTX90_thresholds_1990-2020.nc"
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # load them all
@@ -53,12 +53,12 @@ for i, md in enumerate(doy_labels):
 #  combine and save
 thresholds = xr.concat(threshold_list, dim="md")
 thresholds.name = "ctx90_thresh"
-thresholds.attrs["description"] = "CTX90 90th percentile Tmax, 15-day clipped window, baseline 1961-1990"
+thresholds.attrs["description"] = "CTX90 90th percentile Tmax, 15-day clipped window, baseline 1990-2020"
 thresholds.attrs["units"] = "degC"
 
 mean_tmax = xr.concat(mean_list, dim="md")
 mean_tmax.name = "mn_tmax"
-mean_tmax.attrs["description"] = "Mean Tmax, 15-day window, baseline 1961-1990"
+mean_tmax.attrs["description"] = "Mean Tmax, 15-day window, baseline 1990-2020"
 mean_tmax.attrs["units"] = "degC"
 
 out_ds = xr.Dataset({"ctx90_threshold": thresholds, "mean_tmax": mean_tmax})
@@ -71,13 +71,44 @@ x = range(153)
 xticks = range(0, 153, 15)
 xlabels = [doy_labels[i] for i in xticks]
 
+# check baseline
 plt.figure(figsize=(12, 4))
-plt.plot(x, p90_mean.values, label="Tmax p90 (CTX90 threshold)", color="tomato")
-plt.plot(x, tmax_mean.values, label="Tmax mean", color="steelblue")
+plt.plot(x, p90_mean.values, label="Tmax p90 1990-2020)", color="tomato")
+plt.plot(x, tmax_mean.values, label="Tmax mean 1990-2020", color="steelblue")
 plt.fill_between(x, tmax_mean.values, p90_mean.values, alpha=0.15, color="tomato")
 plt.xticks(ticks=xticks, labels=xlabels, rotation=45)
 plt.ylabel("Temperature (°C)")
-plt.title("CTX90 threshold vs average max temperature during Helsinki summers Helsinki, 1961–1990")
+plt.title("CTX90 threshold vs average max temperature during Helsinki summers Helsinki, 1990–2020")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+
+# compare old and new climatology
+old_file = output_dir / "CTX90_thresholds_1960-1990.nc"
+old_ds = xr.open_dataset(old_file)
+
+old_thresh = old_ds["ctx90_threshold"]
+old_mean   = old_ds["mean_tmax"]
+
+# spatial averages
+old_p90_mean  = old_thresh.mean(dim=["latitude", "longitude"])
+old_tmax_mean = old_mean.mean(dim=["latitude", "longitude"])
+
+
+plt.figure(figsize=(12, 4))
+# 1990–2020
+plt.plot(x, p90_mean.values, label="Tmax p90 1990–2020", color="tomato")
+plt.plot(x, tmax_mean.values, label="Tmax mean 1990–2020", color="steelblue")
+# 1960–1990
+plt.plot(x, old_p90_mean.values, label="Tmax p90 1960–1990", linestyle="--", color="darkred")
+plt.plot(x, old_tmax_mean.values, label="Tmax mean 1960–1990", linestyle="--", color="navy")
+
+plt.fill_between(x, tmax_mean.values, p90_mean.values, alpha=0.15, color="tomato") # shading 
+plt.xticks(ticks=xticks, labels=xlabels, rotation=45)
+plt.ylabel("Temperature (°C)")
+plt.title("Tmax 90perc, mean, Helsinki (old and new climatology)")
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.tight_layout()

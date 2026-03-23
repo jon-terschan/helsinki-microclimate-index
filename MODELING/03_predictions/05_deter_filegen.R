@@ -24,7 +24,7 @@ cat(paste0("Correct array size: ", length(prediction_times), "\nMake sure it mat
 
 #### CREATE PREDICTION TARGETS FOR HEATWAVE EVENTS BASED ON HEATWAVE DATA.
 library(ncdf4)
-era_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/era5/heatwaves_hourly/preprocessed/ERA5L_H2_pre.nc"
+era_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/era5/heatwaves_hourly/preprocessed/ERA5L_H3_pre.nc"
 nc <- nc_open(era_path)
 
 time_vals <- ncvar_get(nc, "valid_time")
@@ -43,7 +43,7 @@ prediction_times <- as.POSIXct(time_vals,
 prediction_times <- sort(unique(prediction_times))
 
 # SAVE
-saveRDS(prediction_times, paste0(output_path, "prediction_schedule_H2.rds"))
+saveRDS(prediction_times, paste0(output_path, "prediction_schedule_H3.rds"))
 
 # SANITY CHECK
 cat(paste0("Total prediction timesteps: ", length(prediction_times), "\n"))

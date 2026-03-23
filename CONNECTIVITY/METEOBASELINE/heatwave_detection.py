@@ -7,7 +7,7 @@ from pathlib import Path
 # and compares the precalculated CTX90 thresholds against them 
 # to create a list and figures of heatwave events within the last 15 years.
 recent_dir     = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\recent_tmax")
-threshold_file = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\thresholds\CTX90_thresholds.nc")
+threshold_file = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\thresholds\CTX90_thresholds_1990-2020.nc")
 output_dir     = Path(r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\heatwaves")
 output_dir.mkdir(parents=True, exist_ok=True)
 
