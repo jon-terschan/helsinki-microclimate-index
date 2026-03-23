@@ -1,4 +1,14 @@
-# data prep
+#######################
+# VALIDATION PIPELINE #
+#######################
+# top to bottom we take the kumpula botanical garden sensors
+# and beat them into a shape and form that we can predict
+# at-sensor location over them and retrieve validation metrics
+# as usual, the most cancerous part here is the era5-extraction
+# everything before is just data prep/conditioning
+
+# data prep#####
+################
 library(sf)
 library(data.table)
 library(lubridate)
@@ -40,8 +50,8 @@ dt_hourly <- dt[, .(
 ), by = .(sensor_id, time = time_hour)]
 
 
-## step 2, sensor ID extraction
-
+## step 2, sensor ID extraction#
+################################
 coords_sf <- st_read("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/VALIDATION/botanical_sensors.gpkg")
 
 coords_sf <- st_transform(coords_sf, 3879)  # ensure city of helsinki crs
@@ -88,9 +98,8 @@ dt_hourly <- merge(dt_hourly, sensor_static, by = c("sensor_id", "x", "y"))
 
 dt_hourly
 
-# -------------------------------
-# ERA5 extraction — final clean version
-# -------------------------------
+# ERA5 extraction
+##################
 
 library(ncdf4)
 library(sf)
@@ -204,10 +213,10 @@ sum(is.na(dt_hourly$ssrd))
 
 dt_hourly
 
-
 saveRDS(dt_hourly, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/validation/dt_validation.rds")
 
-#### validation
+#### validation ####
+####################
 library(ranger)
 library(data.table)
 
@@ -262,104 +271,15 @@ dt_hourly[, .(
 
 saveRDS(dt_hourly, "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/validation/dt_validation_post-pre.rds")
 
-library(data.table)
-library(lubridate)
-library(ggplot2)
-library(patchwork)
-
-# --- aggregate to time level ---
-dt_time <- dt_hourly[, .(
-  observed = mean(observed),
-  pred     = mean(pred)
-), by = time]
-
-# error + time variables
-dt_time[, err := pred - observed]
-dt_time[, `:=`(
-  date = as.Date(with_tz(time, "Europe/Helsinki")),
-  hour = hour(with_tz(time, "Europe/Helsinki"))
-)]
-
-# --- daily stats ---
-date_err <- dt_time[, .(
-  RMSE = sqrt(mean(err^2)),
-  sd_err = sd(err)
-), by = date]
-
-date_bias <- dt_time[, .(
-  bias = mean(err),
-  sd_err = sd(err)
-), by = date]
-
-# --- hourly stats ---
-hour_err <- dt_time[, .(
-  RMSE = sqrt(mean(err^2)),
-  sd_err = sd(err)
-), by = hour]
-
-hour_bias <- dt_time[, .(
-  bias = mean(err),
-  sd_err = sd(err)
-), by = hour]
-
-# --- plots ---
-
-# RMSE over DATE
-p1 <- ggplot(date_err, aes(x = date)) +
-  geom_ribbon(aes(ymin = RMSE - sd_err, ymax = RMSE + sd_err),
-              fill = "#56B4E9", alpha = 0.3) +
-  geom_line(aes(y = RMSE), color = "#0072B2", linewidth = 1) +
-  labs(y = "RMSE (°C)", title = "RMSE over time", x = NULL) +
-  theme_minimal()
-
-# RMSE over HOUR
-p2 <- ggplot(hour_err, aes(x = hour)) +
-  geom_ribbon(aes(ymin = RMSE - sd_err, ymax = RMSE + sd_err),
-              fill = "#E69F00", alpha = 0.3) +
-  geom_line(aes(y = RMSE), color = "#D55E00", linewidth = 1) +
-  labs(y = "RMSE (°C)", title = "RMSE over hour (local time)", x = "Hour") +
-  theme_minimal()
-
-# Bias over DATE
-p3 <- ggplot(date_bias, aes(x = date, y = bias)) +
-  geom_ribbon(aes(ymin = bias - sd_err, ymax = bias + sd_err),
-              fill = "#009E73", alpha = 0.3) +
-  geom_line(color = "#009E73", linewidth = 1) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(y = "Bias (°C)", title = "Bias over time", x = NULL) +
-  theme_minimal()
-
-# Bias over HOUR
-p4 <- ggplot(hour_bias, aes(x = hour, y = bias)) +
-  geom_ribbon(aes(ymin = bias - sd_err, ymax = bias + sd_err),
-              fill = "#CC79A7", alpha = 0.3) +
-  geom_line(color = "#CC79A7", linewidth = 1) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(y = "Bias (°C)", title = "Bias over hour (local time)", x = "Hour") +
-  theme_minimal()
-
-# combine
-fig <- (p1 + p2) / (p3 + p4)
-
-# save
-ggsave(
-  "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/figures/validation_summary.png",
-  fig,
-  width = 10,
-  height = 8,
-  dpi = 300
-)
-
+######validation figures#######
+###############################
 
 library(data.table)
 library(lubridate)
 library(ggplot2)
 library(patchwork)
 
-# -------------------------
 # PREP
-# -------------------------
-
 dt_time <- dt_hourly[, .(
   observed = mean(observed),
   pred     = mean(pred)
@@ -393,10 +313,7 @@ hour_bias <- dt_time[, .(
   sd_err = sd(err)
 ), by = hour]
 
-# -------------------------
 # STYLING
-# -------------------------
-
 col_rmse  <- "#0072B2"
 fill_rmse <- "#56B4E9"
 
@@ -415,9 +332,7 @@ base_theme <- theme_minimal(base_size = 12) +
     plot.title = element_text(face = "bold")
   )
 
-# -------------------------
 # PLOTS
-# -------------------------
 
 # RMSE over time
 p1 <- ggplot(date_err, aes(x = date)) +
@@ -488,16 +403,15 @@ ggsave(
 )
 
 
+###GITHUB DARKMODE FIGURE###
+############################
 
 library(data.table)
 library(lubridate)
 library(ggplot2)
 library(patchwork)
 
-# -------------------------
 # PREP
-# -------------------------
-
 dt_time <- dt_hourly[, .(
   observed = mean(observed),
   pred     = mean(pred)
@@ -519,10 +433,7 @@ hour_bias <- dt_time[, .(
   sd_err = sd(err)
 ), by = hour]
 
-# -------------------------
 # COLORS (dark mode)
-# -------------------------
-
 col_rmse  <- "#58A6FF"
 fill_rmse <- "#58A6FF"
 
@@ -537,10 +448,7 @@ ylim_bias <- range(
     hour_bias$bias + hour_bias$sd_err)
 )
 
-# -------------------------
 # THEME
-# -------------------------
-
 theme_github_dark <- theme_dark(base_size = 12) +
   theme(
     plot.background  = element_rect(fill = bg, color = NA),
@@ -556,10 +464,7 @@ theme_github_dark <- theme_dark(base_size = 12) +
 # ensure English month labels
 Sys.setlocale("LC_TIME", "C")
 
-# -------------------------
 # PLOTS
-# -------------------------
-
 # RMSE over time
 p1 <- ggplot(date_err, aes(x = date)) +
   geom_ribbon(aes(ymin = RMSE - sd_err, ymax = RMSE + sd_err),
