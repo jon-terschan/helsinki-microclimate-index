@@ -583,8 +583,11 @@ p2 <- ggplot(hour_bias, aes(x = hour, y = bias)) +
   theme_github_dark
 
 # combine (side-by-side for README)
-fig <- p1 | p2
-
+fig <- (p1 | p2) &
+  theme(
+    plot.background = element_rect(fill = bg, color = NA),
+    panel.background = element_rect(fill = bg, color = NA)
+  )
 # save
 ggsave(
   "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/figures/validation_summary_darkmode.png",
