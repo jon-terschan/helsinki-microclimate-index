@@ -151,3 +151,56 @@ for event, parts in events.items():
 
 print("All downloads completed.")
 
+
+#### download baseline data
+
+import cdsapi
+import os
+
+client = cdsapi.Client()
+
+target_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\baseline\hourly"
+
+dataset = "reanalysis-era5-land"
+
+years = [str(y) for y in range(1989, 2021)]
+months = ["05", "06", "07", "08", "09"]
+
+variables = [
+    "2m_temperature",
+    "surface_solar_radiation_downwards",
+    "10m_u_component_of_wind",
+    "10m_v_component_of_wind",
+    "total_precipitation"
+]
+
+times = [f"{h:02d}:00" for h in range(24)]
+
+for year in years:
+    for month in months:
+        filename = f"ERA5l_hourly_{year}_{month}.zip"
+        target = os.path.join(target_dir, filename)
+
+        if os.path.exists(target):
+            print(f"Skipping {year}-{month}, already exists")
+            continue
+
+        request = {
+            "variable": variables,
+            "year": year,
+            "month": month,
+            "day": [
+                "01","02","03","04","05","06","07","08","09","10",
+                "11","12","13","14","15","16","17","18","19","20",
+                "21","22","23","24","25","26","27","28","29","30","31"
+            ],
+            "time": times,   # important: zipped output
+            "format": "netcdf",
+            "area": [60.5, 24.7, 60.0, 25.5]
+        }
+
+        print(f"Requesting {year}-{month}")
+        try:
+            client.retrieve(dataset, request, target)
+        except Exception as e:
+            print(f"FAILED {year}-{month}: {e}")
