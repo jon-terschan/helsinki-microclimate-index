@@ -84,7 +84,6 @@ plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 
-
 # compare old and new climatology
 old_file = output_dir / "CTX90_thresholds_1960-1990.nc"
 old_ds = xr.open_dataset(old_file)
@@ -108,8 +107,87 @@ plt.plot(x, old_tmax_mean.values, label="Tmax mean 1960–1990", linestyle="--",
 plt.fill_between(x, tmax_mean.values, p90_mean.values, alpha=0.15, color="tomato") # shading 
 plt.xticks(ticks=xticks, labels=xlabels, rotation=45)
 plt.ylabel("Temperature (°C)")
-plt.title("Tmax 90perc, mean, Helsinki (old and new climatology)")
+plt.title("mean, 90p of maximum 2m air temperature in Helsinki")
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
+
+output_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\appendix\climatology_comparison.png"
+plt.savefig(output_path, dpi=300, bbox_inches="tight")
+plt.show()
+
+
+#######################################################
+# FIGURE CODE AGAIN, BUT LOADING THE FINISHED TIME IN
+#######################################################
+
+# load finished 1990–2020 thresholds file
+new_ds = xr.open_dataset(output_file)
+
+p90 = new_ds["ctx90_threshold"]
+mean = new_ds["mean_tmax"]
+
+# spatial averages
+p90_mean  = p90.mean(dim=["latitude", "longitude"])
+tmax_mean = mean.mean(dim=["latitude", "longitude"])
+
+# x-axis setup
+x = range(len(p90_mean))
+xticks = range(0, len(p90_mean), 15)
+xlabels = [p90.md.values[i] for i in xticks]
+
+
+# ---- plot baseline only ----
+plt.figure(figsize=(12, 4))
+plt.plot(x, p90_mean.values, label="Tmax p90 1990–2020", color="tomato")
+plt.plot(x, tmax_mean.values, label="Tmax mean 1990–2020", color="steelblue")
+plt.fill_between(x, tmax_mean.values, p90_mean.values, alpha=0.15, color="tomato")
+
+plt.xticks(ticks=xticks, labels=xlabels, rotation=45)
+plt.ylabel("Temperature (°C)")
+plt.title("CTX90 threshold vs average max temperature (Helsinki, 1990–2020)")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+
+# ---- compare with old climatology ----
+old_file = output_dir / "CTX90_thresholds_1960-1990.nc"
+old_ds = xr.open_dataset(old_file)
+
+old_p90_mean  = old_ds["ctx90_threshold"].mean(dim=["latitude", "longitude"])
+old_tmax_mean = old_ds["mean_tmax"].mean(dim=["latitude", "longitude"])
+
+plt.figure(figsize=(14, 6))  # wider + taller
+
+# increase global font sizes
+plt.rcParams.update({
+    "font.size": 12,
+    "axes.titlesize": 14,
+    "axes.labelsize": 13,
+    "xtick.labelsize": 11,
+    "ytick.labelsize": 11,
+    "legend.fontsize": 11
+})
+
+# plotting (same as before)
+plt.plot(x, p90_mean.values, label="Tmax p90 1990–2020", color="tomato", linewidth=2)
+plt.plot(x, tmax_mean.values, label="Tmax mean 1990–2020", color="steelblue", linewidth=2)
+
+plt.plot(x, old_p90_mean.values, label="Tmax p90 1960–1990", linestyle="--", color="darkred", linewidth=2)
+plt.plot(x, old_tmax_mean.values, label="Tmax mean 1960–1990", linestyle="--", color="navy", linewidth=2)
+
+plt.fill_between(x, tmax_mean.values, p90_mean.values, alpha=0.2, color="tomato")
+
+plt.xticks(ticks=xticks, labels=xlabels, rotation=45)
+plt.ylabel("Temperature (°C)")
+plt.title("Mean and 90th percentile Tmax (Helsinki)")
+plt.legend()
+
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+
+output_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\appendix\climatology_comparison.png"
+plt.savefig(output_path, dpi=300, bbox_inches="tight")
 plt.show()
