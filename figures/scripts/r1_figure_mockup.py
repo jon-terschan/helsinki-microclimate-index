@@ -70,29 +70,31 @@ ax_polar = fig.add_axes([0.05, 0.05, 0.9, 0.9], polar=True)
 ax_map.set_zorder(1)
 ax_polar.set_zorder(3)
 ax_polar.set_facecolor("none")
-# -----------------------
-# MAP (REAL HELSINKI POLYGON — FIXED)
+
+## -----------------------
+# MAP (DISSOLVED + FAKE RASTER)
 # -----------------------
 import geopandas as gpd
 from shapely.affinity import translate, scale
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
 
 gdf = gpd.read_file(r"C:\Users\terschan\Downloads\crowns\p4\Helsinki_Boundaries.gpkg")
 
-# ensure projected CRS
+# project if needed
 if gdf.crs is None or gdf.crs.is_geographic:
     gdf = gdf.to_crs(epsg=3067)
 
-# get bounds
-minx, miny, maxx, maxy = gdf.total_bounds
+# ---- dissolve to single geometry ----
+gdf = gdf.dissolve()
 
-# center + scale factor
+# ---- normalize to [-1, 1] ----
+minx, miny, maxx, maxy = gdf.total_bounds
 cx = (minx + maxx) / 2
 cy = (miny + maxy) / 2
-
 scale_factor = max(maxx - minx, maxy - miny) / 2
-scale_factor *= 1.15   # <-- increase this (1.1–1.25 range)
+scale_factor *= 1.15  # padding
 
-# apply correct normalization (translate → scale)
 gdf["geometry"] = gdf["geometry"].apply(
     lambda geom: scale(
         translate(geom, xoff=-cx, yoff=-cy),
@@ -102,24 +104,128 @@ gdf["geometry"] = gdf["geometry"].apply(
     )
 )
 
-# plot
-gdf.plot(
-    ax=ax_map,
-    color="#dddddd",
-    edgecolor="black",
-    linewidth=0.8,
-    zorder=1
+geom = gdf.geometry.iloc[0]
+
+# -----------------------
+# CREATE CLUSTERED FAKE RASTER
+# -----------------------
+res = 400
+x = np.linspace(-1, 1, res)
+y = np.linspace(-1, 1, res)
+xx, yy = np.meshgrid(x, y)
+
+# --- multiple gaussian hotspots ---
+n_blobs = 6
+rng = np.random.default_rng(42)
+
+raster = np.zeros_like(xx)
+
+for _ in range(n_blobs):
+    cx = rng.uniform(-0.5, 0.5)
+    cy = rng.uniform(-0.5, 0.5)
+    sigma = rng.uniform(0.15, 0.35)
+    amplitude = rng.uniform(0.6, 1.2)
+
+    blob = amplitude * np.exp(-((xx - cx)**2 + (yy - cy)**2) / (2 * sigma**2))
+    raster += blob
+
+# --- add broad spatial variation (very important) ---
+raster += 0.3 * np.sin(2 * xx) * np.cos(2 * yy)
+
+# --- fine noise ---
+raster += rng.normal(0, 0.05, size=raster.shape)
+
+# normalize
+raster = (raster - raster.min()) / (raster.max() - raster.min())
+# -----------------------
+# SOFT RADIAL BACKGROUND (CIRCULAR)
+# -----------------------
+bg_res = 400
+bx = np.linspace(-1, 1, bg_res)
+by = np.linspace(-1, 1, bg_res)
+bxx, byy = np.meshgrid(bx, by)
+
+radial = np.sqrt(bxx**2 + byy**2)
+
+# smooth radial falloff
+bg = np.exp(-radial**2 * 2.5)
+
+bg_im = ax_map.imshow(
+    bg,
+    extent=(-1, 1, -1, 1),
+    cmap="coolwarm",
+    alpha=0.25,
+    zorder=0
 )
 
 # clip to circle
-circle = Circle((0, 0), 1, transform=ax_map.transData)
-for artist in ax_map.collections:
-    artist.set_clip_path(circle)
+circle_clip = Circle((0, 0), 1.0, transform=ax_map.transData)
+bg_im.set_clip_path(circle_clip)
 
-# keep your stylized boundary if desired
-#theta = np.linspace(0, 2*np.pi, 200)
-#r = 0.8 + 0.1*np.sin(5*theta)
-#ax_map.plot(r*np.cos(theta), r*np.sin(theta), color='black', linewidth=1)
+# show raster
+im = ax_map.imshow(
+    raster,
+    extent=(-1, 1, -1, 1),
+    cmap="coolwarm",
+    alpha=0.65,
+    zorder=1
+)
+# -----------------------
+# COLORBAR (COMPACT + CENTERED)
+# -----------------------
+
+cax = fig.add_axes([0.42, 0.28, 0.16, 0.015])
+
+cbar = fig.colorbar(im, cax=cax, orientation="horizontal")
+
+# move label to top
+cbar.ax.xaxis.set_label_position('top')
+cbar.set_label("Mean temperature offset (°C)", fontsize=8, labelpad=2)
+
+# ticks also on top (optional but cleaner)
+cbar.ax.xaxis.set_ticks_position('top')
+
+cbar.set_ticks([0.0, 0.5, 1.0])
+cbar.set_ticklabels(["0°C", "1.5°C", "3°C"])
+
+cbar.ax.tick_params(labelsize=7, pad=1)
+# -----------------------
+# CLIP RASTER TO HELSINKI SHAPE
+# -----------------------
+def polygon_to_path(polygon):
+    vertices = []
+    codes = []
+
+    def add_ring(coords):
+        coords = list(coords)
+        vertices.extend(coords)
+        codes.extend([Path.MOVETO] + [Path.LINETO]*(len(coords)-2) + [Path.CLOSEPOLY])
+
+    if polygon.geom_type == "Polygon":
+        add_ring(polygon.exterior.coords)
+        for interior in polygon.interiors:
+            add_ring(interior.coords)
+
+    elif polygon.geom_type == "MultiPolygon":
+        for poly in polygon.geoms:
+            add_ring(poly.exterior.coords)
+            for interior in poly.interiors:
+                add_ring(interior.coords)
+
+    return Path(vertices, codes)
+
+clip_path = PathPatch(polygon_to_path(geom), transform=ax_map.transData)
+im.set_clip_path(clip_path)
+
+# -----------------------
+# OUTLINE
+# -----------------------
+gdf.boundary.plot(
+    ax=ax_map,
+    color="black",
+    linewidth=1.0,
+    zorder=2
+)
 
 ax_map.set_xlim(-1, 1)
 ax_map.set_ylim(-1, 1)
