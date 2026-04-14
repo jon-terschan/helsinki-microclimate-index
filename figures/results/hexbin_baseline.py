@@ -269,7 +269,7 @@ axes[1].text(
 
 axes[1].text(
     0.0, 1.01,
-    "b) difference between predicted 15cm and ERA5-Land climatology \n2m air temperature (JJA, 1990–2020)",
+    "b) difference between 15cm (predicted) and 2m (ERA5-Land) \nair temperature (JJA, 1990–2020)",
     transform=axes[1].transAxes,
     ha="left", va="bottom",
     fontsize=9, alpha=0.85
