@@ -157,3 +157,93 @@ nan_map = era.to_array().isnull().sum(dim=("variable", "valid_time"))
 print(nan_map)
 
 print(era.valid_time.sel(valid_time=slice("2018-07-21", "2018-07-23")).values)
+
+
+
+#### SINGLE HEATWAVE ##############
+#### this does the same thing without concat, for our corrected heatwave 2 period # 
+import xarray as xr
+import numpy as np
+import os
+
+# -------------------------------
+# INPUT / OUTPUT
+# -------------------------------
+file = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\heatwaves_hourly\ERA5L_hourly_H2_corrected.nc"
+out  = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\heatwaves_hourly\preprocessed\ERA5L_H2_corrected_pre.nc"
+
+era = xr.open_dataset(file)
+
+# -------------------------------
+# UNIT CONVERSIONS
+# -------------------------------
+
+# Temperature: K → °C
+era["t2m"] = era["t2m"] - 273.15
+era["t2m"].attrs["units"] = "degC"
+
+# Accumulated → hourly
+ssrd_diff = era["ssrd"].diff("valid_time")
+tp_diff   = era["tp"].diff("valid_time")
+
+era = era.isel(valid_time=slice(1, None))  # drop first timestep
+
+# Radiation: J/m² → W/m²
+era["ssrd"] = (ssrd_diff.clip(min=0) / 3600.0)
+era["ssrd"].attrs["units"] = "W m-2"
+
+# Precip: m → mm
+era["tp"] = (tp_diff.clip(min=0) * 1000.0)
+era["tp"].attrs["units"] = "mm"
+
+# -------------------------------
+# FILL MISSING GRID CELL
+# -------------------------------
+target_lat_approx = 60.2
+target_lon_approx = 25.2
+
+target_lat = era.latitude.sel(latitude=target_lat_approx, method="nearest").item()
+target_lon = era.longitude.sel(longitude=target_lon_approx, method="nearest").item()
+
+lat_vals = era.latitude.values
+lon_vals = era.longitude.values
+
+lat_idx = int(np.argmin(np.abs(lat_vals - target_lat)))
+lon_idx = int(np.argmin(np.abs(lon_vals - target_lon)))
+
+vars_to_fill = ["t2m", "ssrd", "tp", "u10", "v10"]
+
+for v in vars_to_fill:
+    data = era[v].values
+
+    north = data[:, lat_idx-1, lon_idx]
+    west  = data[:, lat_idx, lon_idx-1]
+
+    filled = np.where(
+        np.isnan(north) & np.isnan(west),
+        np.nan,
+        np.nanmean(np.stack([north, west], axis=0), axis=0)
+    )
+
+    data[:, lat_idx, lon_idx] = filled
+    era[v].values = data
+
+# -------------------------------
+# WIND SPEED
+# -------------------------------
+era["wind_s"] = np.sqrt(era["u10"]**2 + era["v10"]**2)
+era["wind_s"].attrs["units"] = "m s-1"
+
+# -------------------------------
+# EXPORT
+# -------------------------------
+era.to_netcdf(out)
+
+# -------------------------------
+# QUICK CHECK
+# -------------------------------
+print("Timesteps:", len(era.valid_time))
+print(era)
+
+nan_map = era.to_array().isnull().sum(dim="valid_time")
+print(nan_map)
