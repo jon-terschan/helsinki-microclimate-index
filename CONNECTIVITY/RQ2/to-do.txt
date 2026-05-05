@@ -1,0 +1,4 @@
+3. nudge resistances a bit 
+4. refactor pipeline to conform with new inputs. 
+5. run p95, p50, for all, using 1000m, 750m, 500m, raster and block size 7, for two resistance layers
+6. accumulate heatwave results, create difference masks, lets go. 
