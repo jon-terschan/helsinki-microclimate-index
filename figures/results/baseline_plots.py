@@ -286,3 +286,167 @@ if export_figures:
     fig_v.savefig(os.path.join(out_base, f"baseline_vertical_{target_local_hour}.pdf"), bbox_inches="tight")
 
 plt.show()
+
+
+
+import os
+import numpy as np
+import rasterio
+import matplotlib.pyplot as plt
+from rasterio.plot import plotting_extent
+import contextily as ctx
+from matplotlib.colors import Normalize
+
+# =============================
+# USER SETTINGS
+# =============================
+baseline_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictions\baseline\15cm_July_allday"
+
+tree_path = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictorstack\TREE_FRAC_10m.tif"
+nwn_path  = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictorstack\NWN_FRAC_10m.tif"
+
+utc_offset = 3
+local_hours = list(range(10, 19))  # 10–18 local
+
+export_figures = True
+out_base = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\drafts"
+
+# =============================
+# LOAD VEGETATION
+# =============================
+with rasterio.open(tree_path) as src:
+    tree = src.read(1).astype("float32")
+
+with rasterio.open(nwn_path) as src:
+    nwn = src.read(1).astype("float32")
+
+veg = np.clip(tree + nwn, 0, 1)
+
+# keep EXACT same alpha logic as your working script
+alpha = 0.08 + 0.92 * (veg ** 3)
+
+# =============================
+# LOAD ALL TEMPERATURES
+# =============================
+temps = []
+
+for h in local_hours:
+    utc_hour = (h - utc_offset) % 24
+    hh_str = f"{utc_hour:02d}00"
+    path = os.path.join(baseline_dir, f"pred_20000715_{hh_str}.tif")
+
+    with rasterio.open(path) as src:
+        t = src.read(1).astype("float32")
+
+        if src.nodata is not None:
+            t[t == src.nodata] = np.nan
+
+        # same physical filter you used earlier
+        t[t < 7.0] = np.nan
+
+        if 'extent' not in locals():
+            extent = plotting_extent(src)
+            crs = src.crs
+
+    temps.append(t)
+
+temps = np.stack(temps)
+
+# =============================
+# DAILY RANGE
+# =============================
+temp_range = np.nanmax(temps, axis=0) - np.nanmin(temps, axis=0)
+
+# mask invalid pixels
+mask_valid = ~np.isnan(temp_range)
+
+# =============================
+# COLOR (same philosophy as left panel)
+# =============================
+valid = temp_range[mask_valid]
+
+vmin = np.percentile(valid, 7)
+vmax = np.percentile(valid, 93)
+
+norm = Normalize(vmin=vmin, vmax=vmax)
+cmap = plt.get_cmap("magma")
+
+# =============================
+# RGBA (IDENTICAL STYLE)
+# =============================
+rgba = cmap(norm(temp_range))
+rgba[..., -1] = alpha
+rgba[np.isnan(temp_range), -1] = 0
+
+# =============================
+# DRAW FUNCTION (unchanged)
+# =============================
+def draw_map(ax, img):
+    ax.set_xlim(extent[0], extent[1])
+    ax.set_ylim(extent[2], extent[3])
+    ax.set_aspect("equal")
+
+    ctx.add_basemap(
+        ax,
+        crs=crs,
+        source=ctx.providers.CartoDB.PositronNoLabels,
+        alpha=0.35,
+        zorder=0
+    )
+
+    ax.imshow(img, extent=extent, interpolation="bicubic", zorder=10)
+    ax.axis("off")
+
+# =============================
+# PLOT
+# =============================
+fig, ax = plt.subplots(figsize=(8, 10))
+fig.patch.set_facecolor("#f7f7f7")
+
+draw_map(ax, rgba)
+from matplotlib.patches import FancyBboxPatch
+
+# create rounded rectangle in axes coordinates
+clip = FancyBboxPatch(
+    (0, 0), 1, 1,
+    boxstyle="round,pad=0.02,rounding_size=0.05",
+    transform=ax.transAxes,
+    linewidth=0,
+    facecolor="none"
+)
+
+ax.add_patch(clip)
+
+# apply clipping to everything drawn in the axes
+for artist in ax.get_children():
+    try:
+        artist.set_clip_path(clip)
+    except:
+        pass
+# titles
+ax.text(0, 1.08,
+        "Intra-day temperature variability in urban green areas:",
+        transform=ax.transAxes, fontsize=12, fontweight="semibold")
+
+ax.text(0, 1.01,
+        "Daily 15 cm temperature range (max–min) from 10:00–18:00 local time",
+        transform=ax.transAxes, fontsize=9, alpha=0.85)
+
+# colorbar (same logic as your working script)
+sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+cbar = fig.colorbar(sm, ax=ax, orientation="horizontal", fraction=0.05, pad=0.05)
+cbar.set_label("Temperature range (°C)")
+
+plt.tight_layout()
+
+# =============================
+# EXPORT
+# =============================
+if export_figures:
+    fig.savefig(os.path.join(out_base, "baseline_daily_range.png"),
+                dpi=300, bbox_inches="tight")
+
+    fig.savefig(os.path.join(out_base, "baseline_daily_range.pdf"),
+                bbox_inches="tight")
+
+plt.show()

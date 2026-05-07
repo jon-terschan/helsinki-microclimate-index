@@ -397,31 +397,60 @@ plt.tight_layout()
 plt.savefig(OUT_DIR / "district_heat_decomposition_labeled.png", dpi=300)
 plt.show()
 
-# ======================================================
+## ======================================================
 # FIGURE 4
-# HEATWAVE RASTER MAPS (NO BASEMAP)
+# HEATWAVE RASTER MAPS
+# WITH COLUMN-WISE PERCENTILE CLIPPING
 # ======================================================
 
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.patches import Rectangle
+
+# ------------------------------------------------------
+# SETTINGS
+# ------------------------------------------------------
+TARGET_HOUR = 9          # 12:00 local summer time
+LOW_Q = 2               # lower percentile clip
+HIGH_Q = 98             # upper percentile clip
+
+# ------------------------------------------------------
+# LOAD GREEN MASK
+# ------------------------------------------------------
 tree, extent, crs = read_raster(TREE_TIF)
 nwn, _, _ = read_raster(NWN_TIF)
 
 valid = (~np.isnan(tree)) | (~np.isnan(nwn))
 tree_mask = (np.nan_to_num(tree) > 0) & valid
-nwn_mask = (np.nan_to_num(nwn) > 0) & valid
+nwn_mask  = (np.nan_to_num(nwn) > 0) & valid
 greenmask = tree_mask | nwn_mask
 
+# transparency weighting
 veg = np.clip(np.nan_to_num(tree) + np.nan_to_num(nwn), 0, 1)
 alpha = 0.08 + 0.92 * (veg ** 2.2)
 alpha[~greenmask] = 0
 
+# ------------------------------------------------------
+# LOAD ALL EVENT MAPS
+# ------------------------------------------------------
 maps = {}
 
 for year, peakday in EVENTS.items():
 
-    evt, _, _ = read_raster(PRED_ROOT / year / peakday / tif_name(peakday, TARGET_HOUR))
-    avg, _, _ = read_raster(BASELINE_AVG / tif_name("20000715", TARGET_HOUR))
-    p90, _, _ = read_raster(BASELINE_P90 / tif_name("20000715", TARGET_HOUR))
+    evt, _, _ = read_raster(
+        PRED_ROOT / year / peakday / tif_name(peakday, TARGET_HOUR)
+    )
 
+    avg, _, _ = read_raster(
+        BASELINE_AVG / tif_name("20000715", TARGET_HOUR)
+    )
+
+    p90, _, _ = read_raster(
+        BASELINE_P90 / tif_name("20000715", TARGET_HOUR)
+    )
+
+    # apply green mask
     evt[~greenmask] = np.nan
     avg[~greenmask] = np.nan
     p90[~greenmask] = np.nan
@@ -432,60 +461,180 @@ for year, peakday in EVENTS.items():
         "vs_p90": evt - p90
     }
 
-all_temp = np.concatenate([maps[y]["temp"][~np.isnan(maps[y]["temp"])] for y in maps])
-all_anom = np.concatenate([maps[y]["vs_p90"][~np.isnan(maps[y]["vs_p90"])] for y in maps])
+# ------------------------------------------------------
+# BUILD COLUMN-WISE ARRAYS
+# ------------------------------------------------------
+temp_vals = np.concatenate([
+    maps[y]["temp"][~np.isnan(maps[y]["temp"])]
+    for y in maps
+])
 
-temp_norm = plt.Normalize(np.percentile(all_temp, 5), np.percentile(all_temp, 95))
-amax = np.percentile(np.abs(all_anom), 95)
-anom_norm = TwoSlopeNorm(vmin=-amax, vcenter=0, vmax=amax)
+avg_vals = np.concatenate([
+    maps[y]["vs_avg"][~np.isnan(maps[y]["vs_avg"])]
+    for y in maps
+])
 
+p90_vals = np.concatenate([
+    maps[y]["vs_p90"][~np.isnan(maps[y]["vs_p90"])]
+    for y in maps
+])
+
+# ------------------------------------------------------
+# PERCENTILE-CLIPPED NORMS
+# ------------------------------------------------------
+temp_norm = Normalize(
+    vmin=np.percentile(temp_vals, LOW_Q),
+    vmax=np.percentile(temp_vals, HIGH_Q)
+)
+
+avg_norm = Normalize(
+    vmin=np.percentile(avg_vals, LOW_Q),
+    vmax=np.percentile(avg_vals, HIGH_Q)
+)
+
+p90_norm = Normalize(
+    vmin=np.percentile(p90_vals, LOW_Q),
+    vmax=np.percentile(p90_vals, HIGH_Q)
+)
+
+# ------------------------------------------------------
+# DRAW FUNCTION
+# ------------------------------------------------------
 def draw_panel(ax, arr, norm, cmap):
+
     rgba = cmap(norm(arr))
     rgba[..., -1] = alpha
     rgba[np.isnan(arr), -1] = 0
 
-    ax.imshow(rgba, extent=extent, interpolation="bilinear")
+    ax.imshow(
+        rgba,
+        extent=extent,
+        interpolation="bilinear"
+    )
 
     ax.add_patch(Rectangle(
         (extent[0], extent[2]),
         extent[1] - extent[0],
         extent[3] - extent[2],
-        fill=False, lw=0.5, ec="0.75"
+        fill=False,
+        lw=0.5,
+        ec="0.75"
     ))
 
     ax.axis("off")
     ax.set_aspect("equal")
 
-fig, axes = plt.subplots(3, 3, figsize=(15, 15), constrained_layout=True)
+# ------------------------------------------------------
+# FIGURE LAYOUT
+# ------------------------------------------------------
+fig, axes = plt.subplots(
+    3, 3,
+    figsize=(18, 10),
+    constrained_layout=True
+)
 
-for i, year in enumerate(EVENTS):
+years = list(EVENTS.keys())
 
-    draw_panel(axes[i, 0], maps[year]["temp"], temp_norm, plt.cm.inferno)
-    draw_panel(axes[i, 1], maps[year]["vs_avg"], anom_norm, plt.cm.RdBu_r)
-    draw_panel(axes[i, 2], maps[year]["vs_p90"], anom_norm, plt.cm.RdBu_r)
+for i, year in enumerate(years):
 
-    axes[i, 0].text(-0.05, 0.5, year,
-                    transform=axes[i, 0].transAxes,
-                    rotation=90,
-                    va="center",
-                    ha="right",
-                    fontsize=13,
-                    fontweight="bold")
+    draw_panel(
+        axes[i, 0],
+        maps[year]["temp"],
+        temp_norm,
+        plt.cm.inferno
+    )
 
+    draw_panel(
+        axes[i, 1],
+        maps[year]["vs_avg"],
+        avg_norm,
+        plt.cm.Reds
+    )
+
+    draw_panel(
+        axes[i, 2],
+        maps[year]["vs_p90"],
+        p90_norm,
+        plt.cm.OrRd
+    )
+
+    # row labels
+    axes[i, 0].text(
+        -0.05, 0.5, year,
+        transform=axes[i, 0].transAxes,
+        rotation=90,
+        va="center",
+        ha="right",
+        fontsize=13,
+        fontweight="bold"
+    )
+
+# ------------------------------------------------------
+# COLUMN TITLES
+# ------------------------------------------------------
 titles = [
-    "Absolute temperature",
-    "Heatwave − mean July",
-    "Heatwave − hot-day baseline (p90)"
+    "Absolute modeled temperature",
+    "Heatwave − average July day (mean)",
+    "Heatwave − hot July day (p90)"
 ]
 
 for j in range(3):
-    axes[0, j].set_title(titles[j], fontsize=12, fontweight="bold")
+    axes[0, j].set_title(
+        titles[j],
+        fontsize=12,
+        fontweight="bold"
+    )
 
+# ------------------------------------------------------
+# COLORBARS
+# ------------------------------------------------------
+sm1 = plt.cm.ScalarMappable(norm=temp_norm, cmap="inferno")
+cb1 = fig.colorbar(
+    sm1,
+    ax=axes[:, 0],
+    orientation="horizontal",
+    fraction=0.05,
+    pad=0.02
+)
+cb1.set_label("Temperature (°C)")
+
+sm2 = plt.cm.ScalarMappable(norm=avg_norm, cmap="Reds")
+cb2 = fig.colorbar(
+    sm2,
+    ax=axes[:, 1],
+    orientation="horizontal",
+    fraction=0.05,
+    pad=0.02
+)
+cb2.set_label("Anomaly")
+
+sm3 = plt.cm.ScalarMappable(norm=p90_norm, cmap="OrRd")
+cb3 = fig.colorbar(
+    sm3,
+    ax=axes[:, 2],
+    orientation="horizontal",
+    fraction=0.05,
+    pad=0.02
+)
+cb3.set_label("Anomaly")
+
+# ------------------------------------------------------
+# TITLE
+# ------------------------------------------------------
 fig.suptitle(
-    "Spatial heatwave signatures across Helsinki urban green surfaces\n12:00 local time",
+    f"Spatial heatwave signatures across Helsinki urban green surfaces\n"
+    f"12:00 local time",
     fontsize=16,
     fontweight="bold"
 )
 
-plt.savefig(OUT_DIR / "heatwave_multimap_clean_final.png", dpi=400)
+# ------------------------------------------------------
+# SAVE
+# ------------------------------------------------------
+plt.savefig(
+    OUT_DIR / "heatwave_multimap_percentile_clipped.png",
+    dpi=400,
+    bbox_inches="tight"
+)
+
 plt.show()

@@ -106,10 +106,12 @@ times = [f"{h:02d}:00" for h in range(24)]
 
 events = {
     #H1":[("2010","07",["24","25","26","27","28","29","30"])],
-    "H2":[
-        ("2018","07",["21","22","23","24","25","26","27","28","29","30","31"]),
-        ("2018","08",["01","02","03","04"])
-    ],
+    #"H2":[
+    #    ("2018","07",["21","22","23","24","25","26","27","28","29","30","31"]),
+    #    ("2018","08",["01","02","03","04"])
+    #],
+    "H2_corrected": [
+        ("2018", "07", ["13","14","15","16","17","18","19","20"])]
     #"H3":[("2021","07",["09","10","11","12","13","14","15","16","17","18","19","20"])]
 }
 
@@ -117,20 +119,20 @@ for event, parts in events.items():
 
     for year, month, days in parts:
 
-        out_file = target_dir / f"ERA5L_hourly_{event}_{year}_{month}.nc"
+        out_file = target_dir / f"ERA5L_hourly_{event}_{year}_{month}_cor.nc"
 
         if out_file.exists():
             print(f"Skipping {out_file.name}")
             continue
 
         request = {
-            "product_type": "reanalysis",
             "variable": variables,
             "year": year,
             "month": month,
             "day": days,
             "time": times,
-            "format": "netcdf",
+            "download_format": "unarchived",
+            "data_format" : "netcdf",
             "area": [60.5, 24.7, 60.0, 25.5]
         }
 
@@ -204,3 +206,45 @@ for year in years:
             client.retrieve(dataset, request, target)
         except Exception as e:
             print(f"FAILED {year}-{month}: {e}")
+
+# UNZIP baseline data
+
+import os
+import zipfile
+
+input_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\baseline\hourly"
+output_dir = r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\era5\baseline\hourly\hourly_nc"
+
+os.makedirs(output_dir, exist_ok=True)
+
+for fname in os.listdir(input_dir):
+    if not fname.endswith(".zip"):
+        continue
+
+    zip_path = os.path.join(input_dir, fname)
+    base_name = os.path.splitext(fname)[0]
+    output_path = os.path.join(output_dir, base_name + ".nc")
+
+    if os.path.exists(output_path):
+        print(f"Skipping {fname}, already extracted")
+        continue
+
+    print(f"Processing {fname}")
+
+    with zipfile.ZipFile(zip_path, 'r') as z:
+        nc_files = [f for f in z.namelist() if f.endswith(".nc")]
+
+        # strict checks
+        if len(nc_files) == 0:
+            raise RuntimeError(f"{fname}: no .nc file found")
+
+        if len(nc_files) > 1:
+            raise RuntimeError(f"{fname}: multiple .nc files found: {nc_files}")
+
+        nc_file = nc_files[0]
+
+        # extract and rename
+        z.extract(nc_file, output_dir)
+        extracted_path = os.path.join(output_dir, nc_file)
+
+        os.rename(extracted_path, output_path)
