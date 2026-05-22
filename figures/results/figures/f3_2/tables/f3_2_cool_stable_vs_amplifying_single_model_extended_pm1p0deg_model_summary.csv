@@ -1,0 +1,6 @@
+metric,value
+n_patches,3584.0
+n_cool_stable,3130.0
+n_cool_amplifying,454.0
+model_auc,0.9842099337095889
+bootstrap_successful_fits,500.0

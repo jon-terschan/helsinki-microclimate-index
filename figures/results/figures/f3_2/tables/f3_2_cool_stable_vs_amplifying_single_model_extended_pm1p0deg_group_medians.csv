@@ -1,0 +1,11 @@
+predictor,label,group,patch_summary,cool_stable_median,cool_amplifying_median,difference_amplifying_minus_stable
+inland_position,Inland position (distance to ocean),location,median,469.307373046875,3000.0,2530.692626953125
+elevation,Elevation (DTM),terrain/exposure,median,11.245000839233398,31.128999710083008,19.88399887084961
+slope,Slope,terrain/exposure,median,3.47965145111084,6.456601619720459,2.976950168609619
+tpi_50m,TPI 50 m,terrain/exposure,median,-0.08340978622436523,-0.2234099805355072,-0.14000019431114197
+southness,Southness,terrain/exposure,median,0.11571089923381805,0.07321254909038544,-0.04249835014343262
+canopy_height_max,Canopy height max,vegetation/canopy,median,24.14324951171875,27.123001098632812,2.9797515869140625
+rock_presence_10m,Rock presence 10 m,surface,presence_share,0.0,0.0,0.0
+urban_distance,Urban distance (distance to buildings),built context,median,36.055511474609375,226.16297912597656,190.1074676513672
+building_50m,Building fraction 50 m,built context,fraction_mean,0.005886400118470192,0.0,-0.005886400118470192
+impervious_50m,Impervious fraction 50 m,built context,fraction_mean,0.07837250828742981,0.0,-0.07837250828742981

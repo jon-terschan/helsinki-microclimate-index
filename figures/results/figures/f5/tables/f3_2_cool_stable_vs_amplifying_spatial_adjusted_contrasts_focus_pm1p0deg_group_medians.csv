@@ -1,0 +1,15 @@
+variable,label,group,patch_summary,transform,cool_stable_median_raw,cool_amplifying_median_raw,raw_median_difference
+inland_position,"Inland position
+(distance to ocean)",location,median,log1p,469.307373046875,3000.0,2530.692626953125
+elevation,"Elevation
+(DTM)",terrain/exposure,median,identity,11.24500036239624,31.128999710083008,19.883999347686768
+slope,Slope,terrain/exposure,median,identity,3.47965145111084,6.456601619720459,2.976950168609619
+canopy_height_max,"Canopy height
+max",vegetation/canopy,median,identity,24.143250465393066,27.123000144958496,2.9797496795654297
+rock_presence_10m,"Rock presence
+10 m",surface,presence_share,identity,0.0,0.0,0.0
+tpi_50m,"TPI
+50 m",terrain/exposure,median,identity,-0.08340978622436523,-0.2234099730849266,-0.14000018686056137
+southness,Southness,terrain/exposure,median,identity,0.11571089923381805,0.07321254536509514,-0.042498353868722916
+impervious_50m,"Impervious fraction
+50 m",built context,fraction_mean,identity,0.07837251201272011,0.0,-0.07837251201272011

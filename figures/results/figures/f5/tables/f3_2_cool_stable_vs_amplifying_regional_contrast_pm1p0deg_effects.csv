@@ -1,0 +1,8 @@
+variable,label,group,panel,patch_summary,transform,scale_center,scale,scale_method,n_cool_stable,n_cool_amplifying,n_finite_cool_stable,n_finite_cool_amplifying,raw_effect,raw_ci_low,raw_ci_high,adjusted_effect,adjusted_ci_low,adjusted_ci_high,adjusted_used
+inland_position,"Inland position
+(distance to ocean)",location,regional raw,median,log1p,6.445541152496706,2.7118991641106227,IQR,3142,454,3142,454,0.6834013819948455,0.6531260438400035,0.7111655006755125,,,,False
+elevation,"Elevation
+(DTM)",terrain/exposure,regional raw,median,identity,12.777999877929688,15.682250142097473,IQR,3142,454,3142,454,1.2679302502840528,1.2135057303353287,1.309064391593944,,,,False
+slope,Slope,terrain/exposure,regional raw,median,identity,3.645591616630554,4.71241420507431,IQR,3142,454,3142,454,0.6317250647033639,0.3744140497453422,0.8431414111887082,,,,False
+canopy_height_max,"Canopy height
+max",vegetation/canopy,regional raw,median,identity,24.427000045776367,4.730749607086182,IQR,3142,454,3130,454,0.6298683986787352,0.5116988930966432,0.7394224743806156,,,,False
