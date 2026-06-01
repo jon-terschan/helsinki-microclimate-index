@@ -1,7 +1,7 @@
-<img src="https://github.com/jon-terschan/scripts/blob/main/figures/helmilogo_github.png" width="50%">
+<img src="https://github.com/jon-terschan/scripts/blob/main/figures/github/helmilogo_github.png" width="50%">
 
 # A predictive model of Summer near-ground temperatures in Helsinki urban green spaces🌲☀️
-<img src="https://github.com/jon-terschan/helsinki-microclimate-index/blob/main/figures/temperature_cycle_github.gif" width="100%">
+<img src="https://github.com/jon-terschan/helsinki-microclimate-index/blob/main/figures/github/temperature_cycle_github.gif" width="100%">
 
 Helmi is a random forest model that predicts **hourly near-ground air temperatures in Helsinki parks and urban forests** during the **leaf-on period (Summer)** at a **spatial resolution of 10 meters**. Helmi combines field observations from the [Helsinki Microclimate and Phenology Observatory (HELMO-HELPO)](https://www.helsinki.fi/en/researchgroups/tree-d-lab/research/urban-microclimate-phenology-observatories) with [ERA5-Land](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=overview) meteorological data, canopy structure derived from the [City of Helsinki's airborne laser scanning data](https://hri.fi/data/en_GB/dataset/helsingin-laserkeilausaineistot), and [land cover data](https://www.hsy.fi/en/environmental-information/open-data/avoin-data---sivut/helsinki-region-land-cover-dataset/). Helmi was co-released with [PUBLICATION REFERENCE] and most of the associated data is available [ZENODO LINK]. Here is what HELMI predictions look like:
 
@@ -10,7 +10,7 @@ This repository contains the code for the (pre-)processing of predictors, the tu
 ## Performance
 On average, HELMI's temperature predictions differed from observed values by about 0.6 °C (MAE: 0.63 +- 0.14 °C). Occasionally, larger errors occured, and when taken into account, the typical overall prediction error to be expected is about 1 °C (RMSE: ~0.97 +- 0.23 °C). No systematic over- or underestimation was observed. These observations were retrieved from spatiotemporal cross-validation (k = 25) in the training and tuning phase. When tested against independent sensor data from Kumpula Botanical Garden, a small botanical garden with a semi-dense canopy layer, performance for the Summer of 2024 was slightly worse (about 1–1.5 °C RMSE):
 
-<img src="https://github.com/jon-terschan/helsinki-microclimate-index/blob/main/figures/validation_summary_github.png" width="100%">
+<img src="https://github.com/jon-terschan/helsinki-microclimate-index/blob/main/figures/github/validation_summary_github.png" width="100%">
 
 HELMI's prediction tends to be slightly too cold at night and too warm during the day. Temperature bias is highest during the morning-midday, presumably because the model overestimates solar heating, which, in reality is attenuated by sun angle and microclimate effects the model does not capture well.
 
@@ -44,7 +44,7 @@ Apart from the reported validation, HELMI's performance outside of the well repr
 
 ## Citation
 
-If you use HELMI in academic work, please cite the associated publication and the model:
+If you use Helmi predictions or implementations, please cite the associated publication and the model:
 
 **Primary reference**  
 Terschanski, J. (Year). *Title of the article*. Journal Name. DOI

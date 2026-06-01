@@ -1,8 +1,7 @@
 # here, we stack the static predictors into a multiband raster (stack)
 # to facilitate data retrieval for the training data set and later predictions
-# this step is technically superfluous but it gives me a personal sense of accomplishments
+# this step is technically superfluous but it gives me a personal sense of accomplishment :)
 # and is a good bullshit test for grid alignment
-
 library(terra)
 
 # paths

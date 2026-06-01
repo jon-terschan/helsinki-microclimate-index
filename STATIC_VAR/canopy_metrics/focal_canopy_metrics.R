@@ -2,17 +2,16 @@
 # mainly mean scan angle corrected canopy cover and PAI 
 # these should be somewhat more accurate, albeit still simplified 
 # PAI=−k⋅cos(θ)​ln(GF)​
-# GFcorr​=cos(θ)​GF​, this approximate oblique path length by mean scan angle,
+# GFcorr​=cos(θ)​GF​, this approximates oblique path length by mean scan angle,
 # these are of course limited to the scan angle ranges, so they dont consider
-# the full hemisphere at all. it is basically transcribed
+# the full hemisphere at all. it is basically truncated to the maximum scan angle, which is around 30-40 degrees for our data.
 
+# this wasnt used in the paper - it is here for reference and future use.
 library(lidR)
 library(terra)
 library(future)
 
-# -------------------------
-# USER PATHS
-# -------------------------
+# user paths
 input_dir  <- "E:/ALS/stage1_output_12.2/norm"
 output_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/canopy_metrics"
 master_template_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
@@ -21,28 +20,22 @@ dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 output_file <- file.path(output_dir, "CM_scanangle_corrected_10m.tif")
 
-# -------------------------
-# MASTER GRID GEOMETRY
-# -------------------------
+# master grid geometry
 master_template <- rast(master_template_path)
 crs(master_template) <- "EPSG:3879"
 
 res_master   <- res(master_template)[1]
 start_master <- c(xmin(master_template), ymin(master_template))
 
-# -------------------------
-# METRIC PARAMETERS
-# -------------------------
-canopy_height       <- 2
-z_min               <- 0.2
-pai_k               <- 0.5
-min_points_cell     <- 3
+# emetric calculation parameters
+canopy_height       <- 2 # canopy height threshold for GF estimation
+z_min               <- 0.2 # minimum height
+pai_k               <- 0.5 # extinction coefficient, here simplified based on lit.
+min_points_cell     <- 3 # minimum number of points in a cell to consider it valid for metric calculation
 
 metric_names <- c("CLOS_scan", "PAI_scan")
 
-# -------------------------
-# LAScatalog SETUP
-# -------------------------
+# las catalog setup
 ctg <- readLAScatalog(input_dir)
 
 # Build .lax only if missing
@@ -50,7 +43,6 @@ if (!all(file.exists(paste0(ctg@data$filename, ".lax")))) {
   cat("Building .lax spatial indices...\n")
   lidR:::catalog_laxindex(ctg)
 }
-
 opt_chunk_size(ctg)   <- 800
 opt_chunk_buffer(ctg) <- 30
 opt_select(ctg)       <- "xyzsa"
@@ -58,7 +50,6 @@ opt_progress(ctg)     <- TRUE
 
 # Optional parallelization
 plan(multisession, workers = 4)
-
 .options <- list(
   raster_alignment = list(
     res   = res_master,
@@ -66,12 +57,7 @@ plan(multisession, workers = 4)
   )
 )
 
-# -------------------------
-# SCAN-ANGLE CORRECTED METRIC
-# -------------------------
-# -------------------------
-# ANGLE-CORRECTED CLOSURE + PAI
-# -------------------------
+# angle corrected closure + PAI
 cm_fun <- function(Z, ScanAngle) {
 
   valid <- Z > z_min
@@ -93,9 +79,7 @@ cm_fun <- function(Z, ScanAngle) {
   }
 
   # -------------------------
-  # Hemispherical closure
-  # -------------------------
-
+  # "hemispherical "closure" - naja scan-angle corrected closure
   # Compute directional gap fraction per point
   gap_indicator <- as.numeric(Zf < canopy_height)
 
@@ -116,9 +100,7 @@ cm_fun <- function(Z, ScanAngle) {
   )
 }
 
-# -------------------------
-# PROCESS CATALOG
-# -------------------------
+# process catalog
 out <- catalog_map(
   ctg,
   function(las) {
@@ -137,13 +119,8 @@ out <- catalog_map(
   .options = .options
 )
 
-# -------------------------
-# MERGE & WRITE
-# -------------------------
-cat("Merging chunks...\n")
+# merge chunks and write
 merged <- do.call(terra::merge, out)
-
-cat("Writing final raster...\n")
 writeRaster(
   merged,
   output_file,
@@ -152,5 +129,3 @@ writeRaster(
     gdal = c("COMPRESS=DEFLATE", "TILED=YES")
   )
 )
-
-cat("Finished.\nOutput written to:\n", output_file, "\n")

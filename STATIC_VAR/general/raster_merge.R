@@ -1,7 +1,7 @@
 
-# Merge CHM tiles (or any other raster tiles) into a large raster
-# Inputs: folder of CHM tiles (or any other raster tiles)
-# Outputs: a merged raster 
+# merge CHM tiles (or any other raster tiles) into a large raster
+# inputs: folder of CHM tiles (or any other raster tiles)
+# outputs: a merged raster 
 # -----------------------------------------------------------------------------------------------------------
 # careful: NO CRS checking, so unified CRS and resolution/alignment is assumed for the input.
 

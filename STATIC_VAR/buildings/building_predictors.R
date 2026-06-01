@@ -2,11 +2,9 @@
 # Inputs: building footprint vector
 # Outputs: building frac (10m), building frac mean (50m), distance to buildings (1km max), all at 10 m resolution.
 # -----------------------------------------------------------------------------------------------------------
-# 
 
 # --- header ---
 library(terra)
-
 bldg <- vect("C:/Users/terschan/Downloads/building_metrics/bldgs_helsinki.gpkg")
 dtm_all <- rast("C:/Users/terschan/Downloads/topo_metrics/topometrics/DTM_10m_Helsinki.tif")
 out_dir <- "C:/Users/terschan/Downloads/building_metrics/"
@@ -76,4 +74,3 @@ writeRaster(
   datatype = "FLT4S",
   gdal = "COMPRESS=LZW"
 )
-

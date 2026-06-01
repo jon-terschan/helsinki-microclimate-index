@@ -1,6 +1,6 @@
-# Compute other LULC surface metrics (non-building impervious surfaces, exposed bedrocks)
-# Inputs: DTM, rocky outcrop polygon, impervious surface polygon
-# Outputs: Impervious fraction 10 m and 50 m neighborhood, rock fraction at 10 m, both in 10 m resolution
+# compute other LULC surface metrics (non-building impervious surfaces, exposed bedrocks)
+# inputs: DTM, rocky outcrop polygon, impervious surface polygon
+# outputs: Impervious fraction 10 m and 50 m neighborhood, rock fraction at 10 m, both in 10 m resolution
 # -----------------------------------------------------------------------------------------------------------
 # 
 # REFACTOR LATER TO FIX PATHS TO NEW DIR STRUCTURE

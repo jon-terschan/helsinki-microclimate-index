@@ -2,8 +2,6 @@
 # Inputs: DTM tiles (from ALS), water body polygons (from LULC)
 # Outputs: building frac (10m), building frac mean (50m), distance to buildings (1km max), all at 10 m resolution.
 # -----------------------------------------------------------------------------------------------------------
-# 
-
 # --- header ---
 library(terra)
 

@@ -1,3 +1,4 @@
+# DEPRECATED because we didnt use skyview factor in this paper
 # here i had a moment 
 # where i decided to split the CHM into different tiles
 # in order to run SVF calculation embarassingly parallel 
@@ -6,7 +7,7 @@ library(terra)
 # -----------------------------
 # USER SETTINGS
 # -----------------------------
-input_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/chm_resampled/CHM_0_5m_aligned.tif"       # your raw CHM 0.5 m
+input_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/chm_resampled/CHM_0_5m_aligned.tif"       
 master_temp  <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
 output_dir  <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/tiles"
 

@@ -1,19 +1,17 @@
 # calculate local (neighborhood naive) per pixel canopy metrics
 # mainly canopy cover and PAI
-# these are very simple 
-
+# these are very simple metrics, but they are quite robust and in our prel. testing they seem to perform solidly enough
+# basically the main problem with the ALS parametrization is that the sampling density is super
+# uneven over the canopy height profile, with a strong bias towards the top and sparse sampling in the understory
+# which creates a lot of instability in complex metrics. 
 library(lidR)
 library(terra)
 
-# -------------------------
-# USER PATHS
-# -------------------------
+# paths
 input_dir  <- "E:/ALS/stage1_output_12.2/norm"
 output_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/loc_canopy_metrics"
 master_template_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
-
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-
 # list input files
 las_files <- list.files(
   input_dir,
@@ -22,10 +20,7 @@ las_files <- list.files(
   ignore.case = TRUE
 )
 
-# -------------------------
-# MASTER GRID TEMPLATE
-# -------------------------
-# load master grid template and extrect coords
+# extract coordinates from master template for alignment with rest of the predictors ---
 master_template <- rast(master_template_path)
 crs(master_template) <- "EPSG:3879"
 
@@ -34,21 +29,15 @@ start_master <- c(xmin(master_template), ymin(master_template))
 
 metric_names <- c("CC","PAI","CLOS","UCC","N")
 
-# -------------------------
-# METRIC PARAMETERS
-# -------------------------
-canopy_height       <- 2
-upper_canopy_height <- 10
-z_min               <- 0.2
-pai_k               <- 0.5
-#min_points_cell     <- 3
+# metric predictors ----
+canopy_height       <- 2 # canopy height threshold for GF estimation
+upper_canopy_height <- 10 # upper canopy height threshold for UCC estimation
+z_min               <- 0.2 # minimum height to consider a return valid (removes low noise points, which may be artifacts of triangulation and subsequent normalization)
+pai_k               <- 0.5  # extinction coefficient, here simplified based on literature values for broadleaf canopies, but in reality this is a super complex parameter that depends on leaf angle distribution.
+#min_points_cell     <- 3 # minimum number of points in a cell to consider it valid for metric calculation, but this is not used in the current version of the metric function, as it creates large NA gaps in sparse areas, which may be problematic for some applications. 
 
-# -------------------------
-# METRIC FUNCTION
-# -------------------------
-# -------------------------
-# METRIC FUNCTION
-# -------------------------
+
+# metric calculation fun ---
 cm_fun <- function(z) {
 
   N_all <- length(z)
@@ -68,14 +57,13 @@ cm_fun <- function(z) {
     return(list(CC=0, PAI=0, CLOS=0, UCC=0, N=N_all))
   }
 
-  # -------------------------
-  # gap fraction stabilisation
+  # gap fraction stabilisation ----
   # -------------------------
   # so there is many problems in estimating beer-lambert GF from 
   # ALS, one issue is that point returns are a poor indicator of
   # light permeability in certain cases, especially forest edges, where forests are usually
   # extremely permeable due to the frontier.
-  # i tried forcing gf away from 0 and 1s using epsilon clamps, but it created
+  # i tried forcing GF away from 0 and 1s using epsilon clamps, but it created
   # insane PAI values in forest ages, so I switched to apply a pseudo-count (Laplace smoothing).
   #
   # This avoids:
@@ -108,9 +96,7 @@ cm_fun <- function(z) {
   list(CC=CC, PAI=PAI, CLOS=CC, UCC=UCC, N=N_all)
 }
 
-# -------------------------
-# BATCH SETTINGS
-# -------------------------
+# batch settings ----
 batch_size <- 400
 
 existing_batches <- list.files(
@@ -127,18 +113,14 @@ if (length(existing_batches) > 0) {
 } else {
   last_completed_batch <- 0
 }
-
 cat("Last completed batch:", last_completed_batch, "\n")
-
 start_tile <- last_completed_batch * batch_size + 1
 cat("Resuming from tile:", start_tile, "\n")
 
 batch_list <- list()
 batch_id   <- last_completed_batch + 1
 
-# -------------------------
-# PROCESS LOOP
-# -------------------------
+# process loop ---
 for (i in seq(from = start_tile, to = length(las_files))) {
 
   cat(sprintf("Processing %d/%d: %s\n",
@@ -173,9 +155,7 @@ for (i in seq(from = start_tile, to = length(las_files))) {
   rm(las, r_tile)
   gc()
 
-  # -------------------------
-  # WRITE BATCH
-  # -------------------------
+  # write batch ----
   if (length(batch_list) == batch_size || i == length(las_files)) {
 
     out_file <- file.path(
@@ -208,4 +188,3 @@ for (i in seq(from = start_tile, to = length(las_files))) {
   }
 }
 
-cat("Finished.\n")
