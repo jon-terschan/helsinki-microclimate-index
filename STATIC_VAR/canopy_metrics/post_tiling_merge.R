@@ -1,12 +1,15 @@
-# DEPRECATED because we didnt use skyview factor in this paper
-# Post-tiling merge
-# Load trimmed SVF tiles, crop to inner extents, and merge into one final raster.
+# Merge post-processed tiles into one final raster.
+# Inputs: tiled raster files and a CSV index with inner extents.
+# Outputs: merged SVF raster file.
+# -----------------------------------------------------------------------------------------------------------
+
+# ---- header ---
 library(terra)
 
-# Directory holding processed tile rasters
+# ---- input paths ---
 processed_dir <- "processed_tiles"
-# CSV index file with inner extents for each tile
 index_file <- "tiles/tile_inner_index.csv"
+# CSV index file with inner extents for each tile
 
 # Read the tile extent index
 tile_index <- read.csv(index_file)

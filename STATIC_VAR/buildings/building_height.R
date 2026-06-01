@@ -1,6 +1,6 @@
 # Compute building height from canopy height models and the building footprint.
-# Inputs: canopy height model (CHM) raster, building footprint vector
-# Outputs: rasters of building height (max, 95th percentile) at x m resolution, masked to building footprints
+# Inputs: canopy height model (CHM) raster, building footprint vector.
+# Outputs: rasters of building height (max, 95th percentile) at x m resolution, masked to building footprints.
 # -----------------------------------------------------------------------------------------------------------
 # script assumes that CHM is normalized to height above ground
 

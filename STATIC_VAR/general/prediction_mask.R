@@ -1,8 +1,12 @@
-# creates a prediction mask by combining water/ocean masking with AOI boundaries
-# outputs a raster mask indicating valid prediction areas (land within AOI, excluding water bodies)
-# the model can use this pred mask. 
+# Create a model prediction mask by combining AOI boundaries with water masking.
+# Inputs: stacked water and ocean fraction rasters plus AOI polygon.
+# Outputs: a land-only prediction mask raster with water areas excluded.
+# -----------------------------------------------------------------------------------------------------------
 
+# ---- header ---
 library(terra)
+
+# ---- input paths ---
 
 stack <- rast("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/predictorstack/full_stack/pred_stack_10m.tif")
 water <- stack[["water_fr_10"]]

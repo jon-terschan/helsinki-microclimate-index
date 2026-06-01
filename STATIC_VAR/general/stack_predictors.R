@@ -1,14 +1,17 @@
-# here, we stack the static predictors into a multiband raster (stack)
-# to facilitate data retrieval for the training data set and later predictions
-# this step is technically superfluous but it gives me a personal sense of accomplishment :)
-# and is a good bullshit test for grid alignment
+# Stack static predictor rasters into a single multiband predictor stack.
+# Inputs: individual 10 m predictor rasters and a master template.
+# Outputs: compressed 10 m multiband predictor stack for model training and prediction.
+# -----------------------------------------------------------------------------------------------------------
+
+# ---- header ---
 library(terra)
 
-# paths
+# ---- input paths ---
 pred_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/predictorstack/"
 template <- rast("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif")
 aoi_poly <- vect("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/aoi_outer_buffer.gpkg")
 
+# ---- processing ----
 # list predictor rasters
 files <- list.files(pred_dir, pattern = "\\.tif$", full.names = TRUE)
 

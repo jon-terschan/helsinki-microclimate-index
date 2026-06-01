@@ -1,18 +1,32 @@
-# Compute building topgraphic metrics (slope, eastness, southness, ruggedness) and water metrics (distance to inland water, ocean and inland water/ocean fraction)
-# Inputs: DTM tiles (from ALS), water body polygons (from LULC)
-# Outputs: building frac (10m), building frac mean (50m), distance to buildings (1km max), all at 10 m resolution.
+# Compute topography and water metrics from DTM tiles.
+# Inputs: native DTM tiles, ocean polygon, and inland water polygon.
+# Outputs: 10 m DTM, ocean fraction, inland water fraction, ocean distance, river distance, slope, eastness, southness, and ruggedness.
 # -----------------------------------------------------------------------------------------------------------
-# --- header ---
+
+# ---- header ---
 library(terra)
 
 target_crs <- "EPSG:3879"
 
-# inputs
+# ---- input paths ---
 in_dir  <- "C:/Users/terschan/Downloads/topo_metrics/DTM"
 out_dir <- "C:/Users/terschan/Downloads/topo_metrics/"
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 ocean_poly <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_sea_hel.gpkg") # ocean polygon
 river_poly <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_water_hel.gpkg") # inland water polygon
+
+# ---- outputs ---
+dtm_file <- file.path(out_dir, "topometrics/DTM_10m_Helsinki.tif") 
+# outputs: water metrics
+ocean_frac_10m_file <- file.path(out_dir, "watermask/OCEAN_FRAC_10m_Helsinki.tif")
+water_frac_10m_file <- file.path(out_dir, "watermask/WATER_FRAC_10m_Helsinki.tif")
+dist_ocean_file <- file.path(out_dir, "watermask/OCEAN_DIST_10m_Helsinki.tif")
+dist_river_file <- file.path(out_dir, "watermask/RIVER_DIST_10m_Helsinki.tif")
+# outputs: topometrics
+slope_file <- file.path(out_dir, "topometrics/SLOPE_10m_Helsinki.tif")
+eastness_file <- file.path(out_dir, "topometrics/EASTNESS_10m_Helsinki.tif")
+southness_file <- file.path(out_dir, "topometrics/SOUTHNESS_10m_Helsinki.tif")
+rugged_file <- file.path(out_dir, "topometrics/RUGGEDNESS_10m_Helsinki.tif")
 
 # outputs
 dtm_file <- file.path(out_dir, "topometrics/DTM_10m_Helsinki.tif") 

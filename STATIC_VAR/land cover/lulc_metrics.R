@@ -1,17 +1,17 @@
-# compute other LULC surface metrics (non-building impervious surfaces, exposed bedrocks)
-# inputs: DTM, rocky outcrop polygon, impervious surface polygon
-# outputs: Impervious fraction 10 m and 50 m neighborhood, rock fraction at 10 m, both in 10 m resolution
+# Compute LULC surface metrics for impervious surfaces and rocky outcrops.
+# Inputs: impervious surface polygon, rock outcrop polygon, and 10 m DTM raster.
+# Outputs: 10 m impervious fraction, 50 m impervious mean fraction, rock fraction, tree fraction, and non-woody natural fraction.
 # -----------------------------------------------------------------------------------------------------------
-# 
 # REFACTOR LATER TO FIX PATHS TO NEW DIR STRUCTURE
-# --- header ---
+# ---- header ---
 library(terra)
-# inputs
+
+# ---- input paths ---
 impervious_poly <- vect("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/LULC/lc_impervious_surfaces.gpkg")
 rock_poly       <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_rock_hel.gpkg")
 dtm_all <- rast("C:/Users/terschan/Downloads/topo_metrics/topometrics/DTM_10m_Helsinki.tif") # only needed for template and CRS
 
-# outputs
+# ---- outputs ---
 out_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/predictorstack/"
 imperv_frac_10m_file <- file.path(out_dir, "IMPERV_FRAC_10m_Helsinki.tif")
 imperv_frac_50m_file <- file.path(out_dir, "IMPERV_FRAC_50m_Helsinki.tif")
@@ -76,22 +76,8 @@ writeRaster(rock_frac_10m, rock_frac_10m_file, overwrite = TRUE, datatype = "FLT
 
 
 
-# --- header ---
-library(terra)
-# inputs
-impervious_poly <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_impervious_surfaces.gpkg")
-rock_poly       <- vect("C:/Users/terschan/Downloads/topo_metrics/lc_rock_hel.gpkg")
-dtm_all <- rast("C:/Users/terschan/Downloads/topo_metrics/topometrics/DTM_10m_Helsinki.tif") # only needed for template and CRS
-
-# outputs
-out_dir <- "C:/Users/terschan/Downloads/topo_metrics/"
-imperv_frac_10m_file <- file.path(out_dir, "landcover/IMPERV_FRAC_10m_Helsinki.tif")
-imperv_frac_50m_file <- file.path(out_dir, "landcover/IMPERV_FRAC_50m_Helsinki.tif")
-rock_frac_10m_file   <- file.path(out_dir, "landcover/ROCK_FRAC_10m_Helsinki.tif")
-
-
-
-# --- trees and non woody natural land cover (low veg + bare soil)---
+# ---- additional processing ---
+# --- trees and non woody natural land cover (low veg + bare soil) ---
 
 trees_poly <- vect("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/LULC/lc_trees_all.gpkg")
 nwn_poly <- vect("//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/LULC/lc_nwn.gpkg")

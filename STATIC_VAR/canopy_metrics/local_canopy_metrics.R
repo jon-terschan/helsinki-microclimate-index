@@ -1,17 +1,19 @@
-# calculate local (neighborhood naive) per pixel canopy metrics
-# mainly canopy cover and PAI
-# these are very simple metrics, but they are quite robust and in our prel. testing they seem to perform solidly enough
-# basically the main problem with the ALS parametrization is that the sampling density is super
-# uneven over the canopy height profile, with a strong bias towards the top and sparse sampling in the understory
-# which creates a lot of instability in complex metrics. 
+# Calculate local (neighborhood naive) per-pixel canopy metrics.
+# Inputs: normalized ALS returns and master 10 m template.
+# Outputs: 10 m canopy metric rasters for CC, PAI, canopy closure, uncorrected canopy closure, and point count.
+# -----------------------------------------------------------------------------------------------------------
+
+# ---- header ---
 library(lidR)
 library(terra)
 
-# paths
+# ---- input paths ---
 input_dir  <- "E:/ALS/stage1_output_12.2/norm"
 output_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/loc_canopy_metrics"
 master_template_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+# ---- processing ----
 # list input files
 las_files <- list.files(
   input_dir,

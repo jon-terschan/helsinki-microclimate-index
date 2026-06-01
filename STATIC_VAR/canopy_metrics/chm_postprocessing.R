@@ -1,11 +1,13 @@
-# Fill holes in CHM merger
-# Inputs: folder of CHM tiles (or any other raster tiles)
-# Outputs: a merged raster 
+# Fill holes in CHM merger and resample the filled CHM to 10 m.
+# Inputs: merged 0.5 m CHM raster and water body polygons.
+# Outputs: filled 0.5 m CHM, aligned 0.5 m CHM, and aggregated 10 m CHM.
 # -----------------------------------------------------------------------------------------------------------
-# careful: NO CRS checking, so unified CRS and resolution/alignment is assumed for the input.
 
+# ---- header ---
 library(terra)
 terraOptions(memfrac = 0.8)
+
+# ---- input paths ---
 
 in_file  <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/merged_CHM_05m_Hel.tif"
 out_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/merged_CHM_05m_Hel_filled.tif"

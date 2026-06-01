@@ -1,26 +1,25 @@
-# calculate focal (neighborhood aware) canopy metrics 
-# mainly mean scan angle corrected canopy cover and PAI 
-# these should be somewhat more accurate, albeit still simplified 
-# PAI=−k⋅cos(θ)​ln(GF)​
-# GFcorr​=cos(θ)​GF​, this approximates oblique path length by mean scan angle,
-# these are of course limited to the scan angle ranges, so they dont consider
-# the full hemisphere at all. it is basically truncated to the maximum scan angle, which is around 30-40 degrees for our data.
+# Calculate focal (neighborhood aware) canopy metrics.
+# Inputs: normalized ALS returns, scan angle metadata, and master 10 m template.
+# Outputs: scan-angle corrected canopy closure and PAI on a 10 m grid.
+# -----------------------------------------------------------------------------------------------------------
+# This script was not used in the paper; it is kept for reference and future use.
+# The approach applies angle-weighted corrections to gap fraction and PAI.
 
-# this wasnt used in the paper - it is here for reference and future use.
+# ---- header ---
 library(lidR)
 library(terra)
 library(future)
 
-# user paths
+# ---- input paths ---
 input_dir  <- "E:/ALS/stage1_output_12.2/norm"
 output_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/canopy_metrics"
 master_template_path <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
-
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
+# ---- processing ----
+# master grid geometry
 output_file <- file.path(output_dir, "CM_scanangle_corrected_10m.tif")
 
-# master grid geometry
 master_template <- rast(master_template_path)
 crs(master_template) <- "EPSG:3879"
 

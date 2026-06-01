@@ -1,14 +1,14 @@
-
-# merge CHM tiles (or any other raster tiles) into a large raster
-# inputs: folder of CHM tiles (or any other raster tiles)
-# outputs: a merged raster 
+# Merge CHM tiles (or any other raster tiles) into a large raster.
+# Inputs: folder of aligned raster tiles.
+# Outputs: merged raster and geometry checks against the master template.
 # -----------------------------------------------------------------------------------------------------------
 # careful: NO CRS checking, so unified CRS and resolution/alignment is assumed for the input.
 
-library(terra) # for spatial operations
-terraOptions(memfrac = 0.8) # we aint have all day boy
+# ---- header ---
+library(terra)
+terraOptions(memfrac = 0.8)
 
-### paths
+# ---- input paths ---
 in_dir   <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/loc_canopy_metrics"
 out_dir <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/loc_canopy_metrics"
 tag <- "CM_loc_HEL"   # tag for whatever is the input/output name

@@ -1,28 +1,30 @@
-# DEPRECATED because we didnt use skyview factor in this paper
-# here i had a moment 
-# where i decided to split the CHM into different tiles
-# in order to run SVF calculation embarassingly parallel 
+# Split the canopy height model (CHM) into buffered tiles for parallel processing.
+# Inputs: aligned 0.5 m CHM raster and a master 10 m template.
+# Outputs: buffered CHM tile rasters for later mosaic and reduction.
+# -----------------------------------------------------------------------------------------------------------
+# This script is deprecated for the paper, but it retains the tiling logic used for earlier SVF calculations.
+
+# ---- header ---
 library(terra)
 
-# -----------------------------
-# USER SETTINGS
-# -----------------------------
-input_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/chm_resampled/CHM_0_5m_aligned.tif"       
+# ---- input paths ---
+input_file <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/chm_resampled/CHM_0_5m_aligned.tif"
 master_temp  <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/MASTER_TEMPLATE_10m.tif"
 output_dir  <- "//ad.helsinki.fi/home/t/terschan/Desktop/paper1/scripts/DATA/chm_full/tiles"
-
 dir.create(output_dir, showWarnings = FALSE)
 
+# ---- settings ----
 n_tiles_per_side <- 5       # 5x5 grid
 overlap_pixels   <- 200     # 200 pixels = 100 m at 0.5 m
+
+# ---- processing ----
 
 # -----------------------------
 # LOAD RASTER
 # -----------------------------
 
-
 r <- rast(input_file)
-mast <-rast(master_temp)
+mast <- rast(master_temp)
 ext(mast)
 ext(r)
 nrows_total <- nrow(r)
@@ -32,12 +34,6 @@ res_x <- res(r)[1]
 res_y <- res(r)[2]
 
 cat("Raster size:", nrows_total, "rows x", ncols_total, "cols\n")
-
-library(terra)
-
-# Basic raster info
-nrows_total <- nrow(r)
-ncols_total <- ncol(r)
 
 base_rows <- floor(nrows_total / n_tiles_per_side)
 base_cols <- floor(ncols_total / n_tiles_per_side)
