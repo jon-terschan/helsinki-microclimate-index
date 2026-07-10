@@ -40,26 +40,16 @@ except ImportError:
 # PATHS
 # ============================================================
 
-out_dir = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\results\figures\f1"
-)
+SCRIPT_PATH = Path(__file__).resolve()
+PROJECT_ROOT = SCRIPT_PATH.parents[4] if len(SCRIPT_PATH.parents) >= 5 else SCRIPT_PATH.parent
+
+out_dir = PROJECT_ROOT / "figures" / "results" / "figures" / "f1"
 out_dir.mkdir(parents=True, exist_ok=True)
 
-hourly_file = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\figures\r1_figure\july_hourly_profile_local.csv"
-)
-
-raw_file = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\figures\r1_figure\train_data_july_utc.csv"
-)
-
-validation_csv = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\validation\dt_validation_post-pre.csv"
-)
-
-validation_rds = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\validation\dt_validation_post-pre.rds"
-)
+hourly_file = PROJECT_ROOT / "DATA" / "figures" / "r1_figure" / "july_hourly_profile_local.csv"
+raw_file = PROJECT_ROOT / "DATA" / "figures" / "r1_figure" / "train_data_july_utc.csv"
+validation_csv = PROJECT_ROOT / "DATA" / "validation" / "dt_validation_post-pre.csv"
+validation_rds = PROJECT_ROOT / "DATA" / "validation" / "dt_validation_post-pre.rds"
 
 required_training_files = {
     "hourly_file": hourly_file,
@@ -110,9 +100,19 @@ import sys
 import importlib
 from dataclasses import replace
 
-GLOBAL_STYLE_DIR = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\results\figures"
-)
+script_dir = Path(__file__).resolve().parent
+candidate_dirs = [script_dir, script_dir.parent]
+GLOBAL_STYLE_DIR = None
+
+for candidate in candidate_dirs:
+    if (candidate / "global_plotting_settings.py").exists():
+        GLOBAL_STYLE_DIR = candidate
+        break
+
+if GLOBAL_STYLE_DIR is None:
+    raise FileNotFoundError(
+        "Could not find global_plotting_settings.py in the expected figure folders."
+    )
 
 if str(GLOBAL_STYLE_DIR) not in sys.path:
     sys.path.insert(0, str(GLOBAL_STYLE_DIR))
@@ -691,7 +691,7 @@ def draw_panel_a(ax):
             ax.text(
                 14,
                 y_base + 0.06 * (y_upper - y_lower),
-                "solar radiation",
+                "inc. solar rad. (W/m²)",
                 ha="center",
                 va="center",
                 fontsize=STYLE.fs_legend,
@@ -1067,21 +1067,26 @@ for filename_stem, draw_func in panel_specs:
 # Not exported.
 # ============================================================
 
-fig, axes = plt.subplots(
-    2,
-    2,
-    figsize=(gps.cm_to_in(STYLE.panel_width_cm) * 2, gps.cm_to_in(STYLE.panel_height_cm) * 2),
-    constrained_layout=True
-)
+def show_combined_preview():
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=(gps.cm_to_in(STYLE.panel_width_cm) * 2, gps.cm_to_in(STYLE.panel_height_cm) * 2),
+        constrained_layout=True,
+    )
 
-draw_panel_a(axes[0, 0])
-draw_panel_b(axes[0, 1])
-draw_panel_c(axes[1, 0])
-draw_panel_d(axes[1, 1])
+    draw_panel_a(axes[0, 0])
+    draw_panel_b(axes[0, 1])
+    draw_panel_c(axes[1, 0])
+    draw_panel_d(axes[1, 1])
 
-# Keep preview readable on screen.
-fig.patch.set_facecolor("white")
-for ax in fig.axes:
-    ax.set_facecolor("white")
+    # Keep preview readable on screen.
+    fig.patch.set_facecolor("white")
+    for ax in fig.axes:
+        ax.set_facecolor("white")
 
-plt.show()
+    plt.show()
+
+
+if __name__ == "__main__":
+    show_combined_preview()

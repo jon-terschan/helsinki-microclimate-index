@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import rasterio
 from rasterio.mask import mask
 from rasterio.plot import plotting_extent
-from shapely.geometry import box
+from shapely.geometry import Point, box
 
 
 # ------------------------------------------------------------
@@ -35,8 +35,24 @@ logger_original_path = Path(
     r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\modeling\01_traindataprep\site_locations\helmostatus_original.gpkg"
 )
 
+botanical_sensors_path = Path(
+    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\VALIDATION\botanical_sensors.gpkg"
+)
+
 ocean_raster_path = Path(
     r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictorstack\OCEAN_FRAC_10m_Helsinki.tif"
+)
+
+water_raster_path = Path(
+    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictorstack\WATER_FRAC_10m_Helsinki.tif"
+)
+
+tree_raster_path = Path(
+    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictorstack\TREE_FRAC_10m.tif"
+)
+
+nwn_raster_path = Path(
+    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\DATA\predictorstack\NWN_FRAC_10m.tif"
 )
 
 out_png = Path(
@@ -135,14 +151,66 @@ with rasterio.open(ocean_raster_path) as src:
 
 ocean_mask = ocean > 0
 
-# Transparent everywhere except ocean
+# Soft, light-blue ocean tint that stays subtle
 ocean_rgba = np.zeros((ocean_mask.shape[0], ocean_mask.shape[1], 4), dtype=float)
-ocean_rgba[ocean_mask, 0] = 0.88
-ocean_rgba[ocean_mask, 1] = 0.88
-ocean_rgba[ocean_mask, 2] = 0.88
-ocean_rgba[ocean_mask, 3] = 1.0
+ocean_rgba[ocean_mask, 0] = 0.78
+ocean_rgba[ocean_mask, 1] = 0.84
+ocean_rgba[ocean_mask, 2] = 0.92
+ocean_rgba[ocean_mask, 3] = 0.55
 
 ocean_extent = plotting_extent(ocean, ocean_transform)
+
+
+# ------------------------------------------------------------
+# LOAD VEGETATION RASTERS AND BUILD GREEN SHADES
+# ------------------------------------------------------------
+
+def clip_raster_to_city(raster_path: Path, city_gdf: gpd.GeoDataFrame):
+    with rasterio.open(raster_path) as src:
+        raster_crs = src.crs
+        city_for_mask = city_gdf.to_crs(raster_crs)
+        shapes = [
+            geom
+            for geom in city_for_mask.geometry
+            if geom is not None and not geom.is_empty
+        ]
+        clip_arr, transform = mask(
+            src,
+            shapes,
+            crop=True,
+            filled=True,
+            nodata=0,
+        )
+        return clip_arr[0], transform
+
+
+def make_rgba_mask(mask_arr: np.ndarray, color: tuple[float, float, float], alpha_base: float):
+    rgba = np.zeros((mask_arr.shape[0], mask_arr.shape[1], 4), dtype=float)
+    mask = mask_arr > 0.7
+    values = mask_arr[mask]
+    if values.size == 0:
+        return rgba
+
+    scaled = np.clip(values / 1.0, 0.0, 1.0)
+    alpha = alpha_base + 0.18 * scaled
+    rgba[mask, 0] = color[0]
+    rgba[mask, 1] = color[1]
+    rgba[mask, 2] = color[2]
+    rgba[mask, 3] = alpha
+    return rgba
+
+
+tree_arr, tree_transform = clip_raster_to_city(tree_raster_path, peruspiiri)
+nwn_arr, nwn_transform = clip_raster_to_city(nwn_raster_path, peruspiiri)
+water_arr, water_transform = clip_raster_to_city(water_raster_path, peruspiiri)
+
+tree_rgba = make_rgba_mask(tree_arr, (0.20, 0.50, 0.24), 0.48)
+nwn_rgba = make_rgba_mask(nwn_arr, (0.55, 0.74, 0.42), 0.30)
+water_rgba = make_rgba_mask(water_arr, (0.54, 0.74, 0.86), 0.60)
+
+tree_extent = plotting_extent(tree_arr, tree_transform)
+nwn_extent = plotting_extent(nwn_arr, nwn_transform)
+water_extent = plotting_extent(water_arr, water_transform)
 
 
 # ------------------------------------------------------------
@@ -157,7 +225,6 @@ raster_box = gpd.GeoDataFrame(
 )
 
 peruspiiri_plot = gpd.clip(peruspiiri, raster_box)
-helsinki_outline_plot = peruspiiri_plot.dissolve()
 loggers_plot = gpd.clip(loggers, raster_box)
 
 
@@ -181,12 +248,35 @@ fig.patch.set_alpha(0)
 ax.set_facecolor("none")
 
 # Land / administrative shape
-helsinki_outline_plot.plot(
+peruspiiri_plot.plot(
     ax=ax,
     facecolor="white",
-    edgecolor="black",
-    linewidth=0.85,
+    edgecolor=(0.15, 0.15, 0.15, 0.85),
+    linewidth=0.30,
     zorder=1,
+)
+
+# Vegetation overlays (green shades)
+ax.imshow(
+    tree_rgba,
+    extent=tree_extent,
+    origin="upper",
+    zorder=2,
+)
+
+ax.imshow(
+    nwn_rgba,
+    extent=nwn_extent,
+    origin="upper",
+    zorder=3,
+)
+
+# Water overlays (light blue shades)
+ax.imshow(
+    water_rgba,
+    extent=water_extent,
+    origin="upper",
+    zorder=4,
 )
 
 # Ocean mask
@@ -194,24 +284,7 @@ ax.imshow(
     ocean_rgba,
     extent=ocean_extent,
     origin="upper",
-    zorder=2,
-)
-
-# Internal peruspiiri boundaries
-peruspiiri_plot.boundary.plot(
-    ax=ax,
-    color="black",
-    linewidth=0.22,
-    alpha=0.45,
-    zorder=3,
-)
-
-# Outer outline on top
-helsinki_outline_plot.boundary.plot(
-    ax=ax,
-    color="black",
-    linewidth=1.00,
-    zorder=4,
+    zorder=5,
 )
 
 # Sensor locations
@@ -221,7 +294,7 @@ loggers_plot.plot(
     markersize=3.2,
     marker="o",
     linewidth=0,
-    zorder=5,
+    zorder=8,
 )
 
 # Extent based on raster coverage

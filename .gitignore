@@ -5,3 +5,5 @@ MODELING/02_model/models/*.rds
 DATA/*
 DATA/
 figures/drafts
+paper_deprecated.md
+bivariate_test.py
