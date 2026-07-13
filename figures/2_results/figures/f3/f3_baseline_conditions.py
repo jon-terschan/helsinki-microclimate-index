@@ -47,7 +47,7 @@ BAREGROUND_VECTOR_PATH = DATA / "LULC" / "lc_bareground.gpkg"
 PERUSPIIRI_PATH = DATA / "figures" / "offset_figure" / "peruspiiri_WFS.gpkg"
 
 FIG_DIR = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\results\figures\f3"
+    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\2_results\figures\f3"
 )
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +57,7 @@ FIG_DIR.mkdir(parents=True, exist_ok=True)
 # =============================================================================
 
 GLOBAL_STYLE_DIR = Path(
-    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\results\figures"
+    r"\\ad.helsinki.fi\home\t\terschan\Desktop\paper1\scripts\figures\2_results\figures"
 )
 
 if str(GLOBAL_STYLE_DIR) not in sys.path:
@@ -221,12 +221,12 @@ PANEL_SPECS = [
         panel_id="A",
         basename="f3_panel_a_source_strength_surface_coherent_emphasis",
         raster_path=SOURCE_PATH,
-        colorbar_label="Source strength",
+        colorbar_label="Th. microrefugia potential",
         cmap="BrBG",
         panel_kind="source",
         fixed_ticks=(0.0, 1.0),
-        low_note="low refuge",
-        high_note="high refuge",
+        low_note="low",
+        high_note="high",
     ),
     MapPanelSpec(
         panel_id="B",
@@ -495,6 +495,39 @@ def prepare_boundaries_and_crop(profile: dict) -> dict:
         "pad_x": pad_x,
         "pad_y": pad_y,
     }
+
+
+def get_southernmost_valid_bound(arr: np.ndarray, target_domain: np.ndarray, profile: dict) -> float | None:
+    """
+    Calculate the y-coordinate (spatial) of the southernmost row with valid data.
+    Returns the y-coordinate that should be used as the southern clipping boundary.
+    """
+    valid = np.isfinite(arr) & target_domain
+    if not np.any(valid):
+        return None
+    
+    # Find rows that have any valid data
+    rows_with_data = np.where(np.any(valid, axis=1))[0]
+    if len(rows_with_data) == 0:
+        return None
+    
+    # The highest row index (southernmost in spatial coords for typical north-up orientation)
+    max_valid_row = rows_with_data.max()
+    
+    # Get raster bounds
+    west, south, east, north = rasterio.transform.array_bounds(
+        profile['height'],
+        profile['width'],
+        profile['transform'],
+    )
+    
+    # Calculate pixel height in spatial units
+    pixel_height = (north - south) / profile['height']
+    
+    # Y coordinate just below the last valid row
+    y_cutoff = north - (max_valid_row + 1) * pixel_height
+    
+    return y_cutoff
 
 
 def smooth_display(arr: np.ndarray, sigma: float) -> np.ndarray:
@@ -855,6 +888,10 @@ def prepare_panel_data() -> list[dict]:
         boundary_data["peruspiiri_mask"],
     )
 
+    # Calculate southernmost valid extent from Panel A (source data)
+    panel_a_array = all_panels[0]["array"]
+    south_cutoff = get_southernmost_valid_bound(panel_a_array, target_domain, reference_profile)
+
     bottleneck_overlay = make_bottleneck_overlay(
         norm_arr,
         target_domain,
@@ -871,6 +908,7 @@ def prepare_panel_data() -> list[dict]:
         item["impervious_factor"] = impervious_factor
         item["water_background_rgba"] = water_background_rgba
         item["bottleneck_overlay"] = bottleneck_overlay
+        item["south_cutoff"] = south_cutoff
 
     return all_panels
 
@@ -996,7 +1034,19 @@ def draw_map_panel(fig: plt.Figure, ax, cax, item: dict) -> None:
         )
 
     if DRAW_OUTER_PERUSPIIRI:
-        outline_plot.boundary.plot(
+        outline_to_plot = outline_plot
+        
+        # Clip outline to southern boundary if cutoff is defined
+        if item.get("south_cutoff") is not None:
+            from shapely.geometry import box
+            clip_box = gpd.GeoDataFrame(
+                geometry=[box(item["left"] - item["pad_x"], item["south_cutoff"], 
+                             item["right"] + item["pad_x"], item["top"] + item["pad_y"])],
+                crs=outline_plot.crs,
+            )
+            outline_to_plot = gpd.clip(outline_plot, clip_box)
+        
+        outline_to_plot.boundary.plot(
             ax=ax,
             color=OUTER_BOUNDARY_COLOR,
             linewidth=OUTER_BOUNDARY_WIDTH,
@@ -1008,6 +1058,10 @@ def draw_map_panel(fig: plt.Figure, ax, cax, item: dict) -> None:
     raw_right = item["right"] + item["pad_x"]
     raw_bottom = item["bottom"] - item["pad_y"]
     raw_top = item["top"] + item["pad_y"]
+
+    # Apply southernmost data boundary cutoff from Panel A
+    if item.get("south_cutoff") is not None:
+        raw_bottom = max(raw_bottom, item["south_cutoff"])
 
     target_aspect = axes_physical_aspect(fig, ax)
     plot_left, plot_right, plot_bottom, plot_top = bounds_to_match_axes_aspect(
