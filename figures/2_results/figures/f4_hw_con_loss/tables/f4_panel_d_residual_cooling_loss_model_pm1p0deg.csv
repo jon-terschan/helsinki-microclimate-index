@@ -1,0 +1,6 @@
+term,coefficient
+intercept,2.4732298316555528
+heatwave_temp_median_degC,-0.06112947115922705
+log10_area_m2,-0.020828587022905697
+n_patches,14452.0
+r_squared,0.021169613593604475

@@ -1,0 +1,55 @@
+section,metric,value,unit
+METADATA,Analysis Date,2026-07-13,
+METADATA,Target Domain Pixels,1155287,pixels
+METADATA,Bottleneck Threshold,95,percentile
+METADATA,Corridor Width Definition,30.0,meters
+METADATA,Pixel Resolution,10.0,meters
+LEVEL 1: VEGETATION DISPROPORTIONALITY,Tree - Share of Current,64.25,% of thermal current
+LEVEL 1: VEGETATION DISPROPORTIONALITY,Tree - Share of Area,51.88,% of green area
+LEVEL 1: VEGETATION DISPROPORTIONALITY,Tree - Disproportionality Ratio,1.24,fold change
+LEVEL 1: VEGETATION DISPROPORTIONALITY,NWN - Share of Current,29.0,% of thermal current
+LEVEL 1: VEGETATION DISPROPORTIONALITY,NWN - Share of Area,38.66,% of green area
+LEVEL 1: VEGETATION DISPROPORTIONALITY,NWN - Disproportionality Ratio,0.75,fold change
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,Total Bottleneck Pixels,57765,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_island - Total Pixels,69489,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_island - Bottleneck Pixels,5360,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_island - Bottleneck Density,7.71,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_island - Bottleneck Proportion,9.28,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_peninsula - Total Pixels,19658,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_peninsula - Bottleneck Pixels,2095,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_peninsula - Bottleneck Density,10.66,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_peninsula - Bottleneck Proportion,3.63,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_mainland - Total Pixels,311975,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_mainland - Bottleneck Pixels,26954,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_mainland - Bottleneck Density,8.64,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,tree_corridor_mainland - Bottleneck Proportion,46.66,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_island - Total Pixels,57890,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_island - Bottleneck Pixels,1986,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_island - Bottleneck Density,3.43,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_island - Bottleneck Proportion,3.44,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_peninsula - Total Pixels,17969,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_peninsula - Bottleneck Pixels,1313,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_peninsula - Bottleneck Density,7.31,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_peninsula - Bottleneck Proportion,2.27,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_mainland - Total Pixels,409488,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_mainland - Bottleneck Pixels,10192,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_mainland - Bottleneck Density,2.49,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,nwn_mainland - Bottleneck Proportion,17.64,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_island - Total Pixels,33981,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_island - Bottleneck Pixels,1447,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_island - Bottleneck Density,4.26,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_island - Bottleneck Proportion,2.5,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_peninsula - Total Pixels,11912,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_peninsula - Bottleneck Pixels,561,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_peninsula - Bottleneck Density,4.71,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_peninsula - Bottleneck Proportion,0.97,% of total bottlenecks
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_mainland - Total Pixels,222925,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_mainland - Bottleneck Pixels,7857,pixels
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_mainland - Bottleneck Density,3.52,% of category
+LEVEL 2: BOTTLENECK GEOGRAPHY & CORRIDORS,other_mainland - Bottleneck Proportion,13.6,% of total bottlenecks
+SENSITIVITY ANALYSIS: CORRIDOR WIDTH VARIATION,Tree corridors (30m) - Bottleneck Pixels,34409,pixels
+SENSITIVITY ANALYSIS: CORRIDOR WIDTH VARIATION,Tree corridors (30m) - Bottleneck Proportion,59.57,% of total bottlenecks
+SENSITIVITY ANALYSIS: CORRIDOR WIDTH VARIATION,Tree corridors (40m) - Bottleneck Pixels,34409,pixels
+SENSITIVITY ANALYSIS: CORRIDOR WIDTH VARIATION,Tree corridors (40m) - Bottleneck Proportion,59.57,% of total bottlenecks
+SENSITIVITY ANALYSIS: CORRIDOR WIDTH VARIATION,Tree corridors (50m) - Bottleneck Pixels,40695,pixels
+SENSITIVITY ANALYSIS: CORRIDOR WIDTH VARIATION,Tree corridors (50m) - Bottleneck Proportion,70.45,% of total bottlenecks

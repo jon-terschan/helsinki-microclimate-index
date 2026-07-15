@@ -1,5 +1,0 @@
-corner_id,corner,corner_label,description,pixel_count,total_area_m2,n_patches,median_patch_area_m2,largest_patch_area_m2,patches_per_km2
-1,cool-stable,Cool-stable,"low heatwave T, low ΔT to mean",196962,19696200.0,28305,100.0,228500.0,1437.079233557742
-13,cool-amplifying,Cool-amplifying,"low heatwave T, high ΔT to mean",26756,2675600.0,5730,100.0,268300.0,2141.5757213335323
-4,hot-stable,Hot-stable,"high heatwave T, low ΔT to mean",67194,6719400.0,18796,100.0,324500.0,2797.2735660922103
-16,hot-amplifying,Hot-amplifying,"high heatwave T, high ΔT to mean",150758,15075800.0,35075,100.0,223400.0,2326.5763674232876

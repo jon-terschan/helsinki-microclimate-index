@@ -1,0 +1,11 @@
+corner,bivariate_id,lulc_class,lulc_label,pixel_count,percent_of_corner
+cool-stable,1,Trees 2–10 m,Trees 2–10 m,25670,13.032970826860003
+cool-stable,1,Trees 10–15 m,Trees 10–15 m,25967,13.183761334673694
+cool-stable,1,Trees >15 m,Trees >15 m,118056,59.938465287720476
+cool-stable,1,Fields,Fields,0,0.0
+cool-stable,1,Other vegetation,Other veg.,9830,4.990810410129873
+cool-amplifying,13,Trees 2–10 m,Trees 2–10 m,2921,10.917177455523994
+cool-amplifying,13,Trees 10–15 m,Trees 10–15 m,2156,8.058005680968755
+cool-amplifying,13,Trees >15 m,Trees >15 m,21450,80.1689340708626
+cool-amplifying,13,Fields,Fields,0,0.0
+cool-amplifying,13,Other vegetation,Other veg.,176,0.6577963821198983

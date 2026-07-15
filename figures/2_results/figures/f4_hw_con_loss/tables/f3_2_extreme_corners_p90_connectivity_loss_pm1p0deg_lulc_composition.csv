@@ -1,0 +1,21 @@
+corner_class,corner_label,lulc_class,lulc_label,pixel_count,area_m2,percent_of_corner
+cool_stable,Cool-stable,Trees 2–10 m,Trees 2–10 m,25669,2566900.0,13.032860131196816
+cool_stable,Cool-stable,Trees 10–15 m,Trees 10–15 m,25965,2596500.0,13.183147505026504
+cool_stable,Cool-stable,Trees >15 m,Trees >15 m,118053,11805300.0,59.938768049716685
+cool_stable,Cool-stable,Fields,Fields,0,0.0,0.0
+cool_stable,Cool-stable,Other vegetation,Other veg.,9830,983000.0,4.990962448465647
+cool_amplifying,Cool-amplifying,Trees 2–10 m,Trees 2–10 m,2919,291900.0,10.918271928184028
+cool_amplifying,Cool-amplifying,Trees 10–15 m,Trees 10–15 m,2151,215100.0,8.045633065270245
+cool_amplifying,Cool-amplifying,Trees >15 m,Trees >15 m,21436,2143600.0,80.17953992893212
+cool_amplifying,Cool-amplifying,Fields,Fields,0,0.0,0.0
+cool_amplifying,Cool-amplifying,Other vegetation,Other veg.,176,17600.0,0.6583130727510754
+hot_stable,Hot-stable,Trees 2–10 m,Trees 2–10 m,803,80300.0,1.192544738991609
+hot_stable,Hot-stable,Trees 10–15 m,Trees 10–15 m,102,10200.0,0.15148139897527288
+hot_stable,Hot-stable,Trees >15 m,Trees >15 m,20,2000.0,0.02970223509319076
+hot_stable,Hot-stable,Fields,Fields,19380,1938000.0,28.78146580530185
+hot_stable,Hot-stable,Other vegetation,Other veg.,32522,3252200.0,48.2988044850375
+hot_amplifying,Hot-amplifying,Trees 2–10 m,Trees 2–10 m,27077,2707700.0,17.936539480657128
+hot_amplifying,Hot-amplifying,Trees 10–15 m,Trees 10–15 m,7324,732400.0,4.851616322204557
+hot_amplifying,Hot-amplifying,Trees >15 m,Trees >15 m,5216,521600.0,3.4552199258081613
+hot_amplifying,Hot-amplifying,Fields,Fields,11342,1134200.0,7.513248542660308
+hot_amplifying,Hot-amplifying,Other vegetation,Other veg.,60875,6087500.0,40.32525172231055

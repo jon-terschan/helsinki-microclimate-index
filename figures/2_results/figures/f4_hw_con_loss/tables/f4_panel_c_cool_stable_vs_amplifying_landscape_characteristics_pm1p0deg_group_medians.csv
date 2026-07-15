@@ -1,0 +1,9 @@
+variable,label,patch_summary,median_cool_stable,median_cool_amplifying
+canopy_height_max,max. canopy height,median,24.14324951171875,27.123001098632812
+elevation,elevation,median,11.245000839233398,31.128999710083008
+slope,slope,median,3.47965145111084,6.456601619720459
+tpi_50m,TPI (50 m),median,-0.08340978622436523,-0.2234099805355072
+dist_ocean,distance to sea,median,469.307373046875,3000.0
+dist_inland_water,distance to inland water,median,259.90325927734375,226.310791015625
+building_50m,building fraction (50 m),mean_fraction,0.005886400118470192,0.0
+impervious_50m,impervious fraction (50 m),mean_fraction,0.07837250828742981,0.0

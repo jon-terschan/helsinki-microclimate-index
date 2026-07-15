@@ -1,0 +1,5 @@
+corner_class,corner_label,n_patches,median_patch_area_m2,largest_patch_area_m2,patches_per_km2
+cool_stable,Cool-stable,28303,100.0,228500.0,1437.0214667235323
+cool_amplifying,Cool-amplifying,5723,100.0,268300.0,2140.6396109968205
+hot_stable,Hot-stable,18833,100.0,324900.0,2796.910967550308
+hot_amplifying,Hot-amplifying,35129,100.0,223400.0,2327.0402755696873
